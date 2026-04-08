@@ -1,6 +1,6 @@
 :root {
   --paper: #f6efe4;
-  --paper-strong: rgba(255, 252, 246, 0.88);
+  --paper-strong: rgba(255, 252, 246, 0.94);
   --ink: #1f2a38;
   --ink-soft: #58606a;
   --brick: #b04e3a;
@@ -9,7 +9,7 @@
   --gold: #d0ae63;
   --teal: #1e7a74;
   --line: rgba(31, 42, 56, 0.1);
-  --shadow: 0 24px 60px rgba(34, 40, 49, 0.14);
+  --shadow: 0 14px 34px rgba(34, 40, 49, 0.08);
   --radius: 26px;
 }
 
@@ -27,9 +27,8 @@ body {
   font-family: "Avenir Next", "PingFang SC", "Noto Sans SC", sans-serif;
   color: var(--ink);
   background:
-    radial-gradient(circle at 15% 15%, rgba(208, 174, 99, 0.2), transparent 24%),
-    radial-gradient(circle at 82% 12%, rgba(176, 78, 58, 0.16), transparent 24%),
-    linear-gradient(180deg, #f8f2e8 0%, #efe3d1 48%, #f5ecdf 100%);
+    radial-gradient(circle at 18% 12%, rgba(208, 174, 99, 0.1), transparent 22%),
+    linear-gradient(180deg, #f8f2e8 0%, #f1e7d9 52%, #f7efe5 100%);
 }
 
 .ambient {
@@ -38,23 +37,24 @@ body {
   pointer-events: none;
   z-index: 0;
   border-radius: 999px;
-  filter: blur(10px);
+  filter: blur(18px);
+  opacity: 0.62;
 }
 
 .ambient--one {
-  width: 280px;
-  height: 280px;
+  width: 220px;
+  height: 220px;
   top: 70px;
   right: 4vw;
-  background: rgba(176, 78, 58, 0.12);
+  background: rgba(176, 78, 58, 0.08);
 }
 
 .ambient--two {
-  width: 360px;
-  height: 360px;
+  width: 300px;
+  height: 300px;
   bottom: 120px;
   left: 2vw;
-  background: rgba(170, 184, 158, 0.18);
+  background: rgba(170, 184, 158, 0.11);
 }
 
 .page-shell {
@@ -66,11 +66,11 @@ body {
 
 .panel {
   background: var(--paper-strong);
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 28px;
-  backdrop-filter: blur(18px);
+  padding: 26px;
+  backdrop-filter: blur(10px);
   animation: rise-in 0.75s ease both;
 }
 
@@ -85,7 +85,7 @@ body {
 
 .hero {
   display: grid;
-  gap: 24px;
+  gap: 20px;
   grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.9fr);
   overflow: hidden;
   position: relative;
@@ -94,11 +94,11 @@ body {
 .hero::after {
   content: "";
   position: absolute;
-  inset: -20% auto auto 48%;
-  width: 380px;
-  height: 380px;
+  inset: -8% auto auto 58%;
+  width: 260px;
+  height: 260px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(176, 78, 58, 0.12), transparent 68%);
+  background: radial-gradient(circle, rgba(176, 78, 58, 0.08), transparent 72%);
   pointer-events: none;
 }
 
@@ -157,12 +157,12 @@ p {
 
 .hero__lead {
   max-width: 62ch;
-  margin: 18px 0 0;
+  margin: 16px 0 0;
   font-size: 1.05rem;
 }
 
 .hero__note {
-  margin-top: 18px;
+  margin-top: 16px;
   max-width: 62ch;
   font-size: 0.95rem;
 }
@@ -181,7 +181,7 @@ p {
 }
 
 .hero__meta {
-  margin-top: 20px;
+  margin-top: 18px;
 }
 
 .hero__meta span,
@@ -190,11 +190,11 @@ p {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
+  padding: 7px 12px;
   border-radius: 999px;
-  background: rgba(31, 42, 56, 0.06);
+  background: rgba(31, 42, 56, 0.05);
   color: var(--ink);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
 
 .button,
@@ -225,7 +225,7 @@ input {
 }
 
 .button--ghost {
-  background: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.82);
   color: var(--ink);
   border: 1px solid var(--line);
 }
@@ -253,9 +253,9 @@ input {
 }
 
 .stat-card {
-  padding: 18px;
+  padding: 16px 18px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.84);
   border: 1px solid rgba(31, 42, 56, 0.08);
 }
 
@@ -290,7 +290,7 @@ input {
   align-items: end;
   justify-content: space-between;
   gap: 18px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .section-head__hint {
@@ -323,8 +323,8 @@ input {
 .feedback-card,
 .corpus-card {
   border: 1px solid var(--line);
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.72);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.84);
 }
 
 .rubric-card,
@@ -335,7 +335,7 @@ input {
 .history-item,
 .feedback-card,
 .corpus-card {
-  padding: 20px;
+  padding: 18px;
 }
 
 .note-card__actions {
@@ -343,6 +343,32 @@ input {
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 12px;
+}
+
+.note-card__actions--secondary {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(31, 42, 56, 0.08);
+}
+
+.chip--info {
+  background: rgba(31, 42, 56, 0.06);
+  color: var(--ink);
+}
+
+.chip--success {
+  background: rgba(30, 122, 116, 0.12);
+  color: var(--teal);
+}
+
+.chip--warning {
+  background: rgba(208, 174, 99, 0.18);
+  color: #8a6418;
+}
+
+.chip--danger {
+  background: rgba(176, 78, 58, 0.12);
+  color: #8f3d2d;
 }
 
 .path-grid {
@@ -370,8 +396,8 @@ input {
 
 .main-grid {
   display: grid;
-  gap: 20px;
-  grid-template-columns: minmax(0, 1.5fr) minmax(290px, 0.7fr);
+  gap: 22px;
+  grid-template-columns: minmax(0, 1.48fr) minmax(300px, 0.72fr);
   margin-top: 20px;
 }
 
@@ -414,7 +440,7 @@ select {
 
 .pattern-card__structure {
   padding: 16px;
-  background: rgba(31, 42, 56, 0.05);
+  background: rgba(31, 42, 56, 0.04);
   border-radius: 18px;
   font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   font-size: 1rem;
@@ -429,8 +455,32 @@ select {
 .profile-form,
 .note-stack {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   align-content: start;
+}
+
+.cloud-status-stack {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(31, 42, 56, 0.035);
+  border: 1px solid rgba(31, 42, 56, 0.08);
+}
+
+.cloud-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.cloud-form label {
+  gap: 6px;
+}
+
+.cloud-form .note-card__actions .button,
+.note-card__actions--secondary .button {
+  flex: 1 1 120px;
 }
 
 .exercise-card {
@@ -466,7 +516,7 @@ select {
 .ai-panel {
   padding: 20px;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.76);
+  background: rgba(255, 255, 255, 0.88);
   border: 1px solid var(--line);
 }
 
@@ -590,7 +640,7 @@ select {
   padding: 18px 20px;
   border: 1px solid var(--line);
   border-radius: 20px;
-  background: rgba(31, 42, 56, 0.05);
+  background: rgba(31, 42, 56, 0.04);
 }
 
 .timer-display {
@@ -693,7 +743,7 @@ select {
   margin-top: 16px;
   padding: 18px;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--line);
 }
 
@@ -706,7 +756,7 @@ select {
 .analysis-card {
   padding: 18px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.86);
   border: 1px solid var(--line);
 }
 
@@ -739,7 +789,7 @@ select {
 .compare-card {
   padding: 18px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.86);
   border: 1px solid var(--line);
 }
 
@@ -773,7 +823,7 @@ select {
 .language-card {
   padding: 18px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.86);
   border: 1px solid var(--line);
 }
 

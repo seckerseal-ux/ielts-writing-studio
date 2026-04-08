@@ -1276,13 +1276,23 @@ const POLISHING_REPLACEMENTS = [
 
 const storageKey = "ielts-writing-studio-v2";
 const cloudDeviceKey = "ielts-writing-studio-cloud-device-id";
+const cloudSyncSessionKey = "ielts-writing-studio-cloud-sync-v1";
 const cloudExportVersion = 1;
+const LOCAL_PROXY_ORIGIN = "http://127.0.0.1:8000";
+const CLOUD_SYNC_DELAY = 1400;
+const DEFAULT_CLOUD_SYNC_SESSION = {
+  accountId: "",
+  token: "",
+  lastSyncedAt: 0,
+};
 const AI_BACKEND_OPTIONS = {
   openrouter: { label: "OpenRouter（免费）", keyName: "OPENROUTER_API_KEY" },
   openai: { label: "OpenAI 兼容（GemAI / AIHubMix）", keyName: "OPENAI_API_KEY" },
 };
+const RUNTIME_CONFIG = normalizeRuntimeConfig(window.__IELTS_WRITING_STUDIO_CONFIG__ || {});
 
 const defaultState = {
+  updatedAt: 0,
   profile: {
     currentBand: "6.0",
     targetBand: "7.0",
@@ -1321,6 +1331,8 @@ const defaultState = {
 let state = loadState();
 let timerInterval = null;
 let cloudSyncTimer = null;
+let accountCloudSyncTimer = null;
+let cloudAccountSyncInFlight = false;
 const AI_REVIEW_POLL_INTERVAL_MS = 3000;
 const AI_REVIEW_POLL_TIMEOUT_MS = 4 * 60 * 1000;
 const aiState = {
@@ -1337,6 +1349,13 @@ const cloudSyncState = {
   lastSyncedAt: "",
   notice: "",
   error: "",
+};
+const accountSyncState = {
+  ...loadCloudSyncSession(),
+  syncing: false,
+  statusTone: "info",
+  statusMessage: "未登录",
+  statusDetail: "登录和阅读复盘同一个同步账号后，这里的写作记录、草稿和语料库也会自动备份到云端。",
 };
 
 const els = {
@@ -1376,7 +1395,17 @@ const els = {
   essayResult: document.querySelector("#essay-result"),
   aiStatusChip: document.querySelector("#ai-status-chip"),
   aiModelMeta: document.querySelector("#ai-model-meta"),
+  cloudAuthForm: document.querySelector("#cloud-auth-form"),
+  cloudSyncStatus: document.querySelector("#cloud-sync-status"),
   cloudSyncMeta: document.querySelector("#cloud-sync-meta"),
+  cloudAccount: document.querySelector("#cloud-account"),
+  cloudPassword: document.querySelector("#cloud-password"),
+  cloudAccountChip: document.querySelector("#cloud-account-chip"),
+  cloudLastSyncChip: document.querySelector("#cloud-last-sync-chip"),
+  cloudRegister: document.querySelector("#cloud-register"),
+  cloudLogin: document.querySelector("#cloud-login"),
+  cloudSyncNow: document.querySelector("#cloud-sync-now"),
+  cloudLogout: document.querySelector("#cloud-logout"),
   dataExport: document.querySelector("#data-export"),
   dataImportInput: document.querySelector("#data-import-input"),
   timerDisplay: document.querySelector("#timer-display"),
@@ -1408,6 +1437,7 @@ function normalizeCorpusState(payload) {
 function normalizePersistedState(payload) {
   const parsed = payload && typeof payload === "object" ? payload : {};
   return {
+    updatedAt: Math.max(0, Number(parsed.updatedAt || 0) || 0),
     profile: { ...defaultState.profile, ...(parsed.profile || {}) },
     history: Array.isArray(parsed.history) ? parsed.history.slice(0, 12) : [],
     drafts: { ...defaultState.drafts, ...(parsed.drafts || {}) },
@@ -1431,9 +1461,17 @@ function loadState() {
 }
 
 function saveState(options = {}) {
+  if (options.touch !== false) {
+    state.updatedAt = Date.now();
+  } else {
+    state.updatedAt = Math.max(0, Number(state.updatedAt || 0) || 0);
+  }
   localStorage.setItem(storageKey, JSON.stringify(state));
   if (options.sync !== false) {
     scheduleCloudSync();
+  }
+  if (options.accountSync !== false) {
+    scheduleAccountCloudSync();
   }
 }
 
@@ -1443,7 +1481,11 @@ function init() {
   renderAll();
   bindEvents();
   checkAiStatus();
-  bootstrapCloudState();
+  bootstrapCloudState()
+    .catch(() => {})
+    .finally(() => {
+      syncCloudProgressOnStartup();
+    });
 }
 
 function bindScrollButtons() {
@@ -1588,6 +1630,22 @@ function bindEvents() {
     updateAiStatusUI();
   });
 
+  els.cloudAuthForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    handleCloudAuth("login");
+  });
+  els.cloudRegister?.addEventListener("click", () => {
+    handleCloudAuth("register");
+  });
+  els.cloudLogin?.addEventListener("click", () => {
+    handleCloudAuth("login");
+  });
+  els.cloudSyncNow?.addEventListener("click", () => {
+    pushCloudProgressSnapshot(buildStateSnapshot());
+  });
+  els.cloudLogout?.addEventListener("click", () => {
+    handleCloudLogout();
+  });
   els.dataExport?.addEventListener("click", exportStateBackup);
   els.dataImportInput?.addEventListener("change", handleImportFile);
   window.addEventListener("message", handleMigrationMessage);
@@ -3177,12 +3235,184 @@ function formatDate(timestamp) {
   return new Date(timestamp).toLocaleString("zh-CN");
 }
 
+function normalizeBaseUrl(value) {
+  const normalized = String(value || "").trim().replace(/\/+$/, "");
+  return /^https?:\/\//i.test(normalized) ? normalized : "";
+}
+
+function normalizeRuntimeConfig(source = {}) {
+  const backendBaseUrl = normalizeBaseUrl(source.backendBaseUrl);
+  return {
+    backendBaseUrl,
+    cloudSyncBaseUrl: normalizeBaseUrl(source.cloudSyncBaseUrl) || backendBaseUrl,
+  };
+}
+
+function isFileContext() {
+  return window.location.protocol === "file:";
+}
+
+function isLoopbackHost() {
+  return window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
+}
+
+function hasConfiguredCloudSync() {
+  return Boolean(RUNTIME_CONFIG.cloudSyncBaseUrl);
+}
+
+function supportsSameOriginHostedApis() {
+  return ["http:", "https:"].includes(window.location.protocol);
+}
+
+function hasCloudSyncSupport() {
+  return isFileContext() || isLoopbackHost() || hasConfiguredCloudSync() || supportsSameOriginHostedApis();
+}
+
+function getCloudApiUrl(path) {
+  if (isFileContext()) {
+    return `${LOCAL_PROXY_ORIGIN}${path}`;
+  }
+  if (hasConfiguredCloudSync()) {
+    return `${RUNTIME_CONFIG.cloudSyncBaseUrl}${path}`;
+  }
+  return path;
+}
+
+function normalizeCloudSyncSession(payload = {}) {
+  const input = payload && typeof payload === "object" ? payload : {};
+  return {
+    accountId: String(input.accountId || "").trim().toLowerCase(),
+    token: String(input.token || "").trim(),
+    lastSyncedAt: Number(input.lastSyncedAt || 0) || 0,
+  };
+}
+
+function loadCloudSyncSession() {
+  try {
+    const raw = localStorage.getItem(cloudSyncSessionKey);
+    if (!raw) {
+      return { ...DEFAULT_CLOUD_SYNC_SESSION };
+    }
+    return normalizeCloudSyncSession(JSON.parse(raw));
+  } catch (error) {
+    return { ...DEFAULT_CLOUD_SYNC_SESSION };
+  }
+}
+
+function persistCloudSyncSession() {
+  localStorage.setItem(
+    cloudSyncSessionKey,
+    JSON.stringify({
+      accountId: accountSyncState.accountId,
+      token: accountSyncState.token,
+      lastSyncedAt: accountSyncState.lastSyncedAt,
+    }),
+  );
+}
+
+function getDefaultCloudSyncDetail() {
+  if (!hasCloudSyncSupport()) {
+    return "当前入口会先保存在浏览器本地；如果你想和阅读复盘共用同一个同步账号，请在 site-config.js 里配置 cloudSyncBaseUrl，或给当前站点绑定同一份 REVIEW_ATLAS_SYNC。";
+  }
+
+  if (cloudSyncState.available) {
+    return cloudSyncState.lastSyncedAt
+      ? `当前浏览器已经接上站点备份，最近一次站点备份：${formatDate(cloudSyncState.lastSyncedAt)}。登录共享账号后，还能和阅读复盘共用同一套云端档案。`
+      : "当前浏览器已经接上站点备份。登录共享账号后，还能和阅读复盘共用同一套云端档案。";
+  }
+
+  return "登录和阅读复盘同一个同步账号后，这里的写作记录、草稿和语料库会自动备份到云端。";
+}
+
+function setCloudSyncStatus(message, tone = "info", detail = "") {
+  accountSyncState.statusMessage = message;
+  accountSyncState.statusTone = tone;
+  accountSyncState.statusDetail = detail || getDefaultCloudSyncDetail();
+  updateCloudSyncUI();
+}
+
+function resetCloudSyncSession(options = {}) {
+  const {
+    message = "未登录",
+    tone = "info",
+    detail = getDefaultCloudSyncDetail(),
+    clearAccountInput = false,
+  } = options;
+
+  if (accountCloudSyncTimer) {
+    window.clearTimeout(accountCloudSyncTimer);
+    accountCloudSyncTimer = null;
+  }
+
+  accountSyncState.accountId = "";
+  accountSyncState.token = "";
+  accountSyncState.lastSyncedAt = 0;
+  accountSyncState.syncing = false;
+  persistCloudSyncSession();
+
+  if (els.cloudPassword) {
+    els.cloudPassword.value = "";
+  }
+  if (clearAccountInput && els.cloudAccount) {
+    els.cloudAccount.value = "";
+  }
+
+  setCloudSyncStatus(message, tone, detail);
+}
+
+function createCloudRequestError(message, status = 500, code = "cloud_sync_error") {
+  const error = new Error(message);
+  error.status = status;
+  error.code = code;
+  return error;
+}
+
+function isCloudSessionError(error) {
+  return Number(error?.status || 0) === 401;
+}
+
+async function requestCloudJson(path, options = {}) {
+  if (!hasCloudSyncSupport()) {
+    throw createCloudRequestError(getDefaultCloudSyncDetail(), 400, "cloud_sync_unconfigured");
+  }
+
+  const headers = new Headers(options.headers || {});
+  headers.set("Accept", "application/json");
+  if (options.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  if (accountSyncState.token && !headers.has("X-Cloud-Session")) {
+    headers.set("X-Cloud-Session", accountSyncState.token);
+  }
+
+  const response = await fetch(getCloudApiUrl(path), {
+    ...options,
+    headers,
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw createCloudRequestError(payload.error || "共享同步服务暂时不可用。", response.status, payload.code);
+  }
+  return payload;
+}
+
+function buildStateSnapshot() {
+  return normalizePersistedState({
+    ...state,
+    timer: {
+      ...state.timer,
+      running: false,
+    },
+    updatedAt: Number(state.updatedAt || 0) || Date.now(),
+  });
+}
+
 function countCorpusEntries(corpus) {
   const normalized = normalizeCorpusState(corpus);
   return Object.values(normalized).reduce((sum, items) => sum + items.length, 0);
 }
 
-function isMeaningfullyEmptyState(candidate) {
+function isMeaningfullyEmptyState(candidate = buildStateSnapshot()) {
   const snapshot = normalizePersistedState(candidate);
   return !snapshot.history.length
     && !snapshot.aiArchive.length
@@ -3190,6 +3420,14 @@ function isMeaningfullyEmptyState(candidate) {
     && !snapshot.drafts.paragraphText.trim()
     && !snapshot.drafts.essayText.trim()
     && !snapshot.drafts.customPrompt.trim();
+}
+
+function hasMeaningfulState(snapshot = buildStateSnapshot()) {
+  return !isMeaningfullyEmptyState(snapshot);
+}
+
+function getSnapshotUpdatedAt(snapshot = buildStateSnapshot()) {
+  return Number(snapshot?.updatedAt || 0) || 0;
 }
 
 function getCloudDeviceId() {
@@ -3217,29 +3455,63 @@ function updateCloudSyncUI() {
     return;
   }
 
-  if (cloudSyncState.syncing) {
-    els.cloudSyncMeta.textContent = "云端同步中，你的练习记录和语料库会自动备份。";
-    return;
+  const backendAvailable = hasCloudSyncSupport();
+  const loggedIn = backendAvailable && Boolean(accountSyncState.token);
+  const statusMessage = accountSyncState.statusMessage || (loggedIn ? "已同步" : "未登录");
+  const statusTone = accountSyncState.statusTone || "info";
+  const lastSyncLabel = accountSyncState.lastSyncedAt
+    ? formatDate(accountSyncState.lastSyncedAt)
+    : cloudSyncState.lastSyncedAt
+      ? `${formatDate(cloudSyncState.lastSyncedAt)}（站点备份）`
+      : "尚未同步";
+
+  let detail = accountSyncState.statusDetail || getDefaultCloudSyncDetail();
+  if (!loggedIn) {
+    if (cloudSyncState.syncing) {
+      detail = "站点云端备份中，当前浏览器的练习记录和语料库会继续自动保存。";
+    } else if (cloudSyncState.notice) {
+      detail = cloudSyncState.notice;
+    } else if (cloudSyncState.available || cloudSyncState.bootstrapped) {
+      detail = getDefaultCloudSyncDetail();
+    }
   }
 
-  if (cloudSyncState.notice) {
-    els.cloudSyncMeta.textContent = cloudSyncState.notice;
-    return;
+  if (els.cloudSyncStatus) {
+    els.cloudSyncStatus.textContent = `云端同步：${statusMessage}`;
+    els.cloudSyncStatus.className = `chip chip--cloud chip--${statusTone}`;
+  }
+  els.cloudSyncMeta.textContent = detail;
+
+  if (els.cloudAccountChip) {
+    els.cloudAccountChip.textContent = loggedIn
+      ? `当前账号：${accountSyncState.accountId}`
+      : (cloudSyncState.available ? "当前：站点备份已开" : "当前：本地模式");
+  }
+  if (els.cloudLastSyncChip) {
+    els.cloudLastSyncChip.textContent = `最近同步：${lastSyncLabel}`;
   }
 
-  if (cloudSyncState.available) {
-    els.cloudSyncMeta.textContent = cloudSyncState.lastSyncedAt
-      ? `云端同步已连接，最近一次同步：${formatDate(cloudSyncState.lastSyncedAt)}。`
-      : "云端同步已连接，后续练习会自动备份。";
-    return;
+  if (els.cloudAccount) {
+    if (loggedIn) {
+      els.cloudAccount.value = accountSyncState.accountId;
+    }
+    els.cloudAccount.disabled = accountSyncState.syncing || !backendAvailable;
   }
-
-  if (cloudSyncState.bootstrapped) {
-    els.cloudSyncMeta.textContent = "当前站点还没有启用云端同步，数据仍保存在本地浏览器。";
-    return;
+  if (els.cloudPassword) {
+    els.cloudPassword.disabled = accountSyncState.syncing || !backendAvailable;
   }
-
-  els.cloudSyncMeta.textContent = "当前记录默认保存在浏览器本地。迁到新站时，可以先导出 JSON，再一键导入继续练。";
+  if (els.cloudRegister) {
+    els.cloudRegister.disabled = accountSyncState.syncing || !backendAvailable;
+  }
+  if (els.cloudLogin) {
+    els.cloudLogin.disabled = accountSyncState.syncing || !backendAvailable;
+  }
+  if (els.cloudSyncNow) {
+    els.cloudSyncNow.disabled = accountSyncState.syncing || !loggedIn || !backendAvailable;
+  }
+  if (els.cloudLogout) {
+    els.cloudLogout.disabled = accountSyncState.syncing || !loggedIn || !backendAvailable;
+  }
 }
 
 async function bootstrapCloudState() {
@@ -3268,7 +3540,7 @@ async function bootstrapCloudState() {
       const remoteState = normalizePersistedState(payload.snapshot.state);
       if (isMeaningfullyEmptyState(state) && !isMeaningfullyEmptyState(remoteState)) {
         state = remoteState;
-        saveState({ sync: false });
+        saveState({ sync: false, accountSync: false, touch: false });
         hydrateControls();
         renderAll();
         cloudSyncState.notice = "已从云端恢复你之前的写作记录。";
@@ -3285,6 +3557,262 @@ async function bootstrapCloudState() {
     cloudSyncState.bootstrapped = true;
   } finally {
     updateCloudSyncUI();
+  }
+}
+
+async function applyCloudRemoteSnapshot(remoteSnapshot, updatedAt, options = {}) {
+  state = normalizePersistedState({
+    ...(remoteSnapshot || {}),
+    updatedAt: updatedAt || getSnapshotUpdatedAt(remoteSnapshot),
+  });
+  saveState({ sync: false, accountSync: false, touch: false });
+  hydrateControls();
+  renderAll();
+  accountSyncState.lastSyncedAt = Math.max(Number(updatedAt || 0) || 0, getSnapshotUpdatedAt(state));
+  persistCloudSyncSession();
+  if (options.announceMessage) {
+    setCloudSyncStatus("已同步", "success", options.announceMessage);
+  }
+}
+
+function handleCloudSessionExpired(error) {
+  resetCloudSyncSession({
+    message: "登录已失效",
+    tone: "warning",
+    detail: error?.message || "共享同步账号已经失效，请重新登录。",
+  });
+}
+
+async function fetchCloudProgressSnapshot() {
+  if (!accountSyncState.token) {
+    return null;
+  }
+  return requestCloudJson("/api/cloud-sync/state", {
+    method: "GET",
+  });
+}
+
+async function pushCloudProgressSnapshot(snapshot = buildStateSnapshot(), options = {}) {
+  if (!hasCloudSyncSupport() || !accountSyncState.token || cloudAccountSyncInFlight) {
+    return false;
+  }
+
+  cloudAccountSyncInFlight = true;
+  accountSyncState.syncing = true;
+  setCloudSyncStatus("同步中", "info", `正在把这份写作记录存到账号“${accountSyncState.accountId}”里。`);
+
+  try {
+    const payload = await requestCloudJson("/api/cloud-sync/state", {
+      method: "POST",
+      body: JSON.stringify({
+        state: snapshot,
+        updatedAt: getSnapshotUpdatedAt(snapshot) || Date.now(),
+      }),
+    });
+
+    if (payload?.state && payload.conflict) {
+      await applyCloudRemoteSnapshot(payload.state, payload.updatedAt, {
+        announceMessage: "云端那边有更新一些的版本，已经替你切过去了。",
+      });
+      return true;
+    }
+
+    if (payload?.state) {
+      state = normalizePersistedState(payload.state);
+      saveState({ sync: false, accountSync: false, touch: false });
+      hydrateControls();
+      renderAll();
+    }
+
+    accountSyncState.lastSyncedAt = Number(payload?.updatedAt || getSnapshotUpdatedAt(snapshot) || Date.now()) || Date.now();
+    persistCloudSyncSession();
+    setCloudSyncStatus(
+      "已同步",
+      "success",
+      options.announceMessage || `这台设备和账号“${accountSyncState.accountId}”里的写作记录已经对上了。`,
+    );
+    return true;
+  } catch (error) {
+    if (isCloudSessionError(error)) {
+      handleCloudSessionExpired(error);
+    } else {
+      setCloudSyncStatus("同步失败", "danger", error?.message || "共享同步暂时不可用，请稍后再试。");
+    }
+    return false;
+  } finally {
+    accountSyncState.syncing = false;
+    cloudAccountSyncInFlight = false;
+    updateCloudSyncUI();
+  }
+}
+
+function scheduleAccountCloudSync() {
+  if (!accountSyncState.token || !hasCloudSyncSupport()) {
+    return;
+  }
+
+  if (accountCloudSyncTimer) {
+    window.clearTimeout(accountCloudSyncTimer);
+  }
+
+  setCloudSyncStatus("待同步", "warning", `你刚更新了内容，系统会稍后自动同步到账号“${accountSyncState.accountId}”。`);
+  accountCloudSyncTimer = window.setTimeout(() => {
+    accountCloudSyncTimer = null;
+    pushCloudProgressSnapshot(buildStateSnapshot());
+  }, CLOUD_SYNC_DELAY);
+}
+
+async function syncCloudProgressOnStartup(options = {}) {
+  if (!hasCloudSyncSupport()) {
+    setCloudSyncStatus("本地模式", "info", getDefaultCloudSyncDetail());
+    return;
+  }
+
+  if (!accountSyncState.token) {
+    setCloudSyncStatus("未登录", "info", getDefaultCloudSyncDetail());
+    updateCloudSyncUI();
+    return;
+  }
+
+  accountSyncState.syncing = true;
+  setCloudSyncStatus("连接中", "info", `正在看看账号“${accountSyncState.accountId}”里有没有更新一些的写作记录。`);
+
+  try {
+    const remotePayload = await fetchCloudProgressSnapshot();
+    if (remotePayload?.accountId) {
+      accountSyncState.accountId = String(remotePayload.accountId || accountSyncState.accountId).trim().toLowerCase();
+      persistCloudSyncSession();
+    }
+
+    const remoteSnapshot = remotePayload?.state && typeof remotePayload.state === "object" ? remotePayload.state : null;
+    const remoteUpdatedAt = Math.max(Number(remotePayload?.updatedAt || 0) || 0, getSnapshotUpdatedAt(remoteSnapshot));
+    const localSnapshot = buildStateSnapshot();
+    const localUpdatedAt = getSnapshotUpdatedAt(localSnapshot);
+
+    if (remoteSnapshot && remoteUpdatedAt > localUpdatedAt) {
+      await applyCloudRemoteSnapshot(remoteSnapshot, remoteUpdatedAt, {
+        announceMessage: options.announceMessage || "已经从共享账号拉回更新一些的写作记录。",
+      });
+      return;
+    }
+
+    if (localUpdatedAt > remoteUpdatedAt || (hasMeaningfulState(localSnapshot) && !remoteUpdatedAt)) {
+      await pushCloudProgressSnapshot(localSnapshot, {
+        announceMessage: options.announceMessage || "这份写作记录已经同步到共享账号。",
+      });
+      return;
+    }
+
+    accountSyncState.lastSyncedAt = remoteUpdatedAt || accountSyncState.lastSyncedAt || Date.now();
+    persistCloudSyncSession();
+    setCloudSyncStatus("已同步", "success", `这台设备和账号“${accountSyncState.accountId}”里的写作记录已经对上了。`);
+  } catch (error) {
+    if (isCloudSessionError(error)) {
+      handleCloudSessionExpired(error);
+    } else {
+      setCloudSyncStatus("连接失败", "danger", error?.message || "暂时连不上共享同步服务，请稍后再试。");
+    }
+  } finally {
+    accountSyncState.syncing = false;
+    updateCloudSyncUI();
+  }
+}
+
+async function handleCloudAuth(action) {
+  if (!hasCloudSyncSupport()) {
+    setCloudSyncStatus("本地模式", "info", getDefaultCloudSyncDetail());
+    return;
+  }
+
+  const accountId = els.cloudAccount?.value?.trim() || "";
+  const password = els.cloudPassword?.value || "";
+  if (!accountId) {
+    setCloudSyncStatus("等待输入", "warning", "先填一个同步账号，再去注册或登录。");
+    return;
+  }
+  if (!password) {
+    setCloudSyncStatus("等待输入", "warning", "还差同步口令。注册和登录都需要同一套口令。");
+    return;
+  }
+
+  accountSyncState.syncing = true;
+  setCloudSyncStatus(
+    action === "register" ? "注册中" : "登录中",
+    "info",
+    action === "register"
+      ? "正在创建你的共享同步账号，并准备把当前写作记录推上去。"
+      : "正在登录共享同步账号，并准备对比本地和云端哪一份更新。",
+  );
+
+  try {
+    const payload = await requestCloudJson("/api/cloud-sync/auth", {
+      method: "POST",
+      body: JSON.stringify({
+        action,
+        accountId,
+        password,
+      }),
+    });
+
+    accountSyncState.accountId = String(payload.accountId || accountId).trim().toLowerCase();
+    accountSyncState.token = String(payload.token || "").trim();
+    accountSyncState.lastSyncedAt = 0;
+    persistCloudSyncSession();
+    if (els.cloudPassword) {
+      els.cloudPassword.value = "";
+    }
+    updateCloudSyncUI();
+
+    await syncCloudProgressOnStartup({
+      announceMessage:
+        action === "register"
+          ? "账号已经建好，现在开始同步这边的写作记录。"
+          : "已经登录，正在对一下本地和云端哪份更新一些。",
+    });
+  } catch (error) {
+    accountSyncState.syncing = false;
+    setCloudSyncStatus(
+      action === "register" ? "注册失败" : "登录失败",
+      "danger",
+      error?.message || "共享同步账号暂时不可用，请稍后再试。",
+    );
+    updateCloudSyncUI();
+  }
+}
+
+async function handleCloudLogout() {
+  if (!hasCloudSyncSupport()) {
+    setCloudSyncStatus("本地模式", "info", getDefaultCloudSyncDetail());
+    return;
+  }
+
+  if (!accountSyncState.token) {
+    setCloudSyncStatus("未登录", "info", getDefaultCloudSyncDetail());
+    return;
+  }
+
+  const currentAccount = accountSyncState.accountId;
+  accountSyncState.syncing = true;
+  updateCloudSyncUI();
+
+  try {
+    await requestCloudJson("/api/cloud-sync/auth", {
+      method: "POST",
+      body: JSON.stringify({
+        action: "logout",
+        token: accountSyncState.token,
+      }),
+    });
+  } catch {
+    // Remote logout failure should not block local logout.
+  } finally {
+    resetCloudSyncSession({
+      message: "已退出",
+      tone: "info",
+      detail: currentAccount
+        ? `已退出共享账号“${currentAccount}”。本地数据和站点备份都还在，你之后重新登录就能继续同步。`
+        : getDefaultCloudSyncDetail(),
+    });
   }
 }
 
@@ -3378,7 +3906,7 @@ async function importStatePayload(payload, source = "import-file") {
   }
 
   state = importedState;
-  saveState({ sync: false });
+  saveState({ sync: false, accountSync: false });
   hydrateControls();
   renderAll();
 
@@ -3409,7 +3937,15 @@ async function importStatePayload(payload, source = "import-file") {
     }
   }
 
-  cloudSyncState.notice = "旧站数据已经导入成功，历史记录、语料库和草稿都已接上。";
+  if (accountSyncState.token) {
+    await pushCloudProgressSnapshot(buildStateSnapshot(), {
+      announceMessage: "导入的数据已经同步到你的共享账号。",
+    });
+  }
+
+  cloudSyncState.notice = accountSyncState.token
+    ? "旧站数据已经导入成功，也已经接到共享同步账号里。"
+    : "旧站数据已经导入成功，历史记录、语料库和草稿都已接上。";
   updateCloudSyncUI();
 }
 

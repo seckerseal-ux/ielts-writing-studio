@@ -192,9 +192,32 @@
               <p id="ai-side-meta">如果通过本地代理连接 OpenAI 兼容接口（GemAI / AIHubMix）或 OpenRouter，就能在整篇写作区拿到句子升级、词汇替换和重写提纲。</p>
             </article>
             <article class="note-card">
-              <h3>数据迁移</h3>
-              <p id="cloud-sync-meta">当前记录默认保存在浏览器本地。迁到新站时，可以先导出 JSON，再一键导入继续练。</p>
-              <div class="note-card__actions">
+              <h3>云端同步</h3>
+              <div class="cloud-status-stack">
+                <span class="chip chip--cloud" id="cloud-sync-status">云端同步：正在检查</span>
+                <p id="cloud-sync-meta">登录和阅读复盘同一个同步账号后，这里的写作记录、草稿和语料库也会自动备份到云端。</p>
+                <div class="tag-row">
+                  <span class="tag" id="cloud-account-chip">当前：本地模式</span>
+                  <span class="tag" id="cloud-last-sync-chip">最近同步：尚未同步</span>
+                </div>
+              </div>
+              <form class="cloud-form" id="cloud-auth-form">
+                <label>
+                  同步账号
+                  <input id="cloud-account" type="text" maxlength="48" autocomplete="username" placeholder="如 review-atlas-01" />
+                </label>
+                <label>
+                  同步口令
+                  <input id="cloud-password" type="password" maxlength="72" autocomplete="current-password" placeholder="至少 6 位" />
+                </label>
+                <div class="note-card__actions">
+                  <button class="button button--ghost" id="cloud-register" type="button">注册</button>
+                  <button class="button button--ghost" id="cloud-login" type="button">登录</button>
+                  <button class="button button--ghost" id="cloud-sync-now" type="button">立即同步</button>
+                  <button class="button button--ghost" id="cloud-logout" type="button">退出</button>
+                </div>
+              </form>
+              <div class="note-card__actions note-card__actions--secondary">
                 <button class="button button--ghost" id="data-export" type="button">导出数据</button>
                 <label class="button button--ghost upload-button" for="data-import-input">导入数据</label>
                 <input id="data-import-input" type="file" accept="application/json" hidden />
@@ -346,10 +369,11 @@
       </section>
 
       <footer class="footer">
-        <p>适合日常写作训练、句式积累和快速自评。AI 模式需要通过根目录的 `server.py` 启动本地代理服务。</p>
+        <p>适合日常写作训练、句式积累和快速自评。在线版可直接用 AI 精批；如果你想和阅读复盘共用同一个同步账号，可以给写作站接同一份云同步后端。</p>
       </footer>
     </div>
 
+    <script defer src="./site-config.js"></script>
     <script defer src="./app.js"></script>
   </body>
 </html>
