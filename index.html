@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IELTS Writing Studio</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient--one"></div>
+    <div class="ambient ambient--two"></div>
+    <div class="page-shell">
+      <header class="panel hero" id="top">
+        <div class="hero__copy">
+          <p class="eyebrow">IELTS Writing Studio</p>
+          <h1>把雅思大小作文拆成一条可执行的训练链</h1>
+          <p class="hero__lead">
+            先记句式，再做填空，再练段落，最后完成整篇写作，并按雅思写作四项标准给出本地估算分与 AI 精批建议。
+          </p>
+          <div class="hero__meta">
+            <span>Task 1 Academic</span>
+            <span>Task 2 Essay</span>
+            <span>句式填空</span>
+            <span>本地估分</span>
+            <span>AI 精批</span>
+          </div>
+          <div class="hero__actions">
+            <button class="button button--primary" data-scroll-target="path" type="button">开始今天训练</button>
+            <button class="button button--ghost" data-scroll-target="essays" type="button">直达整篇写作</button>
+          </div>
+          <p class="hero__note">
+            说明：内置题库采用 Cambridge-style 改写版，避免直接复制官方题目；如果你要练手头真题，可以在整篇区直接粘贴自己的题目。
+          </p>
+        </div>
+        <aside class="hero__stats">
+          <div class="stat-card stat-card--accent">
+            <span class="stat-card__label">总练习次数</span>
+            <strong class="stat-card__value" id="stat-total">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card__label">平均估算分</span>
+            <strong class="stat-card__value" id="stat-average">0.0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card__label">最佳成绩</span>
+            <strong class="stat-card__value" id="stat-best">0.0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card__label">AI 状态</span>
+            <strong class="stat-card__value stat-card__value--small" id="ai-hero-status">检测中</strong>
+          </div>
+        </aside>
+      </header>
+
+      <section class="panel" id="rubric">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">评分维度</p>
+            <h2>训练逻辑直接对应雅思写作四项标准</h2>
+          </div>
+          <p class="section-head__hint">Task 1 更强调概括与比较，Task 2 更强调立场、论证与展开。</p>
+        </div>
+        <div class="rubric-grid">
+          <article class="rubric-card">
+            <h3>Task Achievement / Response</h3>
+            <p>是否真正回答题目、抓住重点、字数达标、没有遗漏关键趋势或论点。</p>
+          </article>
+          <article class="rubric-card">
+            <h3>Coherence & Cohesion</h3>
+            <p>段落是否清晰，连接是否自然，信息是否按读者最容易理解的顺序展开。</p>
+          </article>
+          <article class="rubric-card">
+            <h3>Lexical Resource</h3>
+            <p>词汇是否够准确、够多样，能否避免重复，并自然使用学术表达和搭配。</p>
+          </article>
+          <article class="rubric-card">
+            <h3>Grammatical Range & Accuracy</h3>
+            <p>句型是否有变化，复杂句是否稳定，标点和主谓结构是否清楚。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel path-panel" id="path">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">练习路径</p>
+            <h2>从句式填空到整篇输出</h2>
+          </div>
+          <p class="section-head__hint">建议顺序：句式库 → 填空 → 段落 → 整篇 → AI 复盘。</p>
+        </div>
+        <div class="path-grid">
+          <article class="path-card">
+            <span class="path-card__step">01</span>
+            <h3>句式工具箱</h3>
+            <p>按 Task 1 / Task 2 查看高频功能句，先搭语言骨架。</p>
+            <button class="text-button" data-scroll-target="patterns" type="button">去看句式</button>
+          </article>
+          <article class="path-card">
+            <span class="path-card__step">02</span>
+            <h3>句式填空</h3>
+            <p>把句式拆成可填空的短练习，训练改写、比较和论证表达。</p>
+            <button class="text-button" data-scroll-target="blanks" type="button">去做填空</button>
+          </article>
+          <article class="path-card">
+            <span class="path-card__step">03</span>
+            <h3>段落训练</h3>
+            <p>围绕题目完成一个 overview 或 body paragraph，先练展开质量。</p>
+            <button class="text-button" data-scroll-target="paragraphs" type="button">练一个段落</button>
+          </article>
+          <article class="path-card">
+            <span class="path-card__step">04</span>
+            <h3>整篇精批</h3>
+            <p>本地快评先定位结构问题，再决定是否走 AI 精批。</p>
+            <button class="text-button" data-scroll-target="essays" type="button">开始整篇</button>
+          </article>
+        </div>
+      </section>
+
+      <div class="main-grid">
+        <section class="panel" id="patterns">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">句式工具箱</p>
+              <h2>高频句式按功能归类</h2>
+            </div>
+            <div class="inline-controls">
+              <label>
+                任务类型
+                <select id="pattern-task-filter">
+                  <option value="all">全部</option>
+                  <option value="task1">Task 1</option>
+                  <option value="task2">Task 2</option>
+                </select>
+              </label>
+              <label>
+                功能
+                <select id="pattern-category-filter"></select>
+              </label>
+            </div>
+          </div>
+          <div class="pattern-grid" id="pattern-grid"></div>
+        </section>
+
+        <aside class="panel side-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">训练设定</p>
+              <h2>把页面调成更适合你</h2>
+            </div>
+          </div>
+          <form class="profile-form" id="profile-form">
+            <label>
+              当前写作水平
+              <select id="current-band">
+                <option value="5.5">5.5</option>
+                <option value="6.0" selected>6.0</option>
+                <option value="6.5">6.5</option>
+                <option value="7.0">7.0</option>
+                <option value="7.5">7.5</option>
+              </select>
+            </label>
+            <label>
+              目标分数
+              <select id="target-band">
+                <option value="6.0">6.0</option>
+                <option value="6.5">6.5</option>
+                <option value="7.0" selected>7.0</option>
+                <option value="7.5">7.5</option>
+                <option value="8.0">8.0</option>
+              </select>
+            </label>
+            <label>
+              主要备考任务
+              <select id="preferred-task">
+                <option value="all">大小作文一起练</option>
+                <option value="task1">先攻 Task 1</option>
+                <option value="task2">先攻 Task 2</option>
+              </select>
+            </label>
+          </form>
+          <div class="note-stack">
+            <article class="note-card">
+              <h3>推荐节奏</h3>
+              <p>每天 25 分钟即可：2 个填空 + 1 个段落 + 1 次整篇或半篇复盘。</p>
+            </article>
+            <article class="note-card">
+              <h3>高分提醒</h3>
+              <p>Task 1 不写个人观点；Task 2 立场要稳定，例子宁少而具体，不要堆空话。</p>
+            </article>
+            <article class="note-card">
+              <h3>AI 说明</h3>
+              <p id="ai-side-meta">如果通过本地代理连接 OpenAI 兼容接口（GemAI / AIHubMix）或 OpenRouter，就能在整篇写作区拿到句子升级、词汇替换和重写提纲。</p>
+            </article>
+            <article class="note-card">
+              <h3>数据迁移</h3>
+              <p id="cloud-sync-meta">当前记录默认保存在浏览器本地。迁到新站时，可以先导出 JSON，再一键导入继续练。</p>
+              <div class="note-card__actions">
+                <button class="button button--ghost" id="data-export" type="button">导出数据</button>
+                <label class="button button--ghost upload-button" for="data-import-input">导入数据</label>
+                <input id="data-import-input" type="file" accept="application/json" hidden />
+              </div>
+            </article>
+          </div>
+        </aside>
+      </div>
+
+      <section class="panel" id="blanks">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">句式填空</p>
+            <h2>把模板句练到能直接调用</h2>
+          </div>
+          <div class="inline-controls">
+            <label>
+              题目
+              <select id="blank-select"></select>
+            </label>
+            <button class="button button--ghost" id="blank-random" type="button">随机一题</button>
+          </div>
+        </div>
+        <div class="exercise-card" id="blank-card"></div>
+        <div class="result-panel" id="blank-result"></div>
+      </section>
+
+      <div class="practice-grid">
+        <section class="panel" id="paragraphs">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">段落训练</p>
+              <h2>先把一个段落写扎实</h2>
+            </div>
+            <div class="inline-controls">
+              <label>
+                题目
+                <select id="paragraph-select"></select>
+              </label>
+              <button class="button button--ghost" id="paragraph-random" type="button">换一题</button>
+            </div>
+          </div>
+          <div class="prompt-shell" id="paragraph-prompt"></div>
+          <label class="field-label" for="paragraph-text">你的段落</label>
+          <textarea
+            id="paragraph-text"
+            class="writing-box"
+            placeholder="Task 1 建议 50-90 词，Task 2 建议 90-140 词。"
+          ></textarea>
+          <div class="writing-toolbar">
+            <span class="word-counter" id="paragraph-word-count">0 词</span>
+            <button class="button button--primary" id="paragraph-evaluate" type="button">评分并反馈</button>
+          </div>
+          <div class="result-panel" id="paragraph-result"></div>
+        </section>
+
+        <section class="panel" id="essays">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">整篇写作</p>
+              <h2>围绕 Cambridge-style 题库做整篇输出</h2>
+            </div>
+            <div class="inline-controls">
+              <label>
+                任务
+                <select id="essay-task-filter">
+                  <option value="task1">Task 1</option>
+                  <option value="task2" selected>Task 2</option>
+                </select>
+              </label>
+              <label>
+                话题
+                <select id="essay-topic-filter"></select>
+              </label>
+              <label>
+                题目
+                <select id="essay-select"></select>
+              </label>
+              <button class="button button--ghost" id="essay-random" type="button">随机题</button>
+            </div>
+          </div>
+          <div class="prompt-shell" id="essay-prompt"></div>
+          <label class="field-label" for="custom-prompt">或粘贴自己的题目</label>
+          <textarea
+            id="custom-prompt"
+            class="support-box"
+            placeholder="如果你想练自己手头的剑桥原题，可以把题目粘贴在这里。留空则使用上方内置题库。"
+          ></textarea>
+          <div class="timer-panel">
+            <div class="timer-display" id="timer-display">40:00</div>
+            <div class="timer-actions">
+              <button class="button button--ghost" id="timer-start" type="button">开始计时</button>
+              <button class="button button--ghost" id="timer-pause" type="button">暂停</button>
+              <button class="button button--ghost" id="timer-reset" type="button">重置</button>
+            </div>
+          </div>
+          <div class="ai-panel">
+            <div class="inline-controls">
+              <label>
+                AI 后端
+                <select id="essay-ai-backend">
+                  <option value="openrouter">OpenRouter（免费）</option>
+                  <option value="openai">OpenAI 兼容（GemAI / AIHubMix）</option>
+                </select>
+              </label>
+            </div>
+            <div class="tag-row">
+              <span class="chip" id="ai-status-chip">AI 状态检测中</span>
+              <span class="chip" id="ai-model-meta">如果已启动本地代理，这里会显示当前后端和写作精批模型</span>
+            </div>
+          </div>
+          <label class="field-label" for="essay-text">你的整篇作文</label>
+          <textarea
+            id="essay-text"
+            class="writing-box writing-box--large"
+            placeholder="Task 1 建议至少 150 词；Task 2 建议至少 250 词。写完后先本地快评，再决定是否走 AI 精批。"
+          ></textarea>
+          <div class="writing-toolbar">
+            <span class="word-counter" id="essay-word-count">0 词</span>
+            <div class="inline-controls">
+              <button class="button button--ghost" id="essay-evaluate" type="button">本地快评</button>
+              <button class="button button--primary" id="essay-ai-evaluate" type="button">AI 精批</button>
+            </div>
+          </div>
+          <div class="result-panel" id="essay-result"></div>
+        </section>
+      </div>
+
+      <section class="panel" id="history">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">训练记录</p>
+            <h2>最近几次练习的分数和建议</h2>
+          </div>
+          <button class="button button--ghost" id="history-clear" type="button">清空记录</button>
+        </div>
+        <div class="history-list" id="history-list"></div>
+      </section>
+
+      <section class="panel" id="corpus">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">个人语料库</p>
+            <h2>根据你的每次练习动态积累句型与表达</h2>
+          </div>
+          <p class="section-head__hint">会根据本地快评和 AI 精批持续更新，不是固定模板库。</p>
+        </div>
+        <div class="corpus-grid" id="corpus-grid"></div>
+      </section>
+
+      <footer class="footer">
+        <p>适合日常写作训练、句式积累和快速自评。AI 模式需要通过根目录的 `server.py` 启动本地代理服务。</p>
+      </footer>
+    </div>
+
+    <script defer src="./app.js"></script>
+  </body>
+</html>

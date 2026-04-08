@@ -1,0 +1,574 @@
+const DEFAULT_PROVIDER_BASE_URLS = {
+  openai: "https://api.openai.com/v1",
+  openrouter: "https://openrouter.ai/api/v1",
+};
+
+const DEFAULT_GEMAI_BASE_URL = "https://api.gemai.cc/v1";
+const DEFAULT_GEMAI_WRITING_MODEL = "[满血B]gemini-3.1-pro-preview-thinking";
+const DEFAULT_AIHUBMIX_BASE_URL = "https://aihubmix.com/v1";
+const DEFAULT_AIHUBMIX_WRITING_MODEL = "MiniMax-M2.1";
+const DEFAULT_OPENAI_WRITING_MODEL = "gpt-5-mini";
+const DEFAULT_OPENROUTER_WRITING_MODEL = "openai/gpt-oss-20b:free";
+const OPENAI_COMPAT_TIMEOUT_MS = 45000;
+const OPENROUTER_TIMEOUT_MS = 25000;
+
+const WRITING_REVIEW_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    overall_band: { type: "number" },
+    band_breakdown: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        task_response: { type: "number" },
+        coherence_cohesion: { type: "number" },
+        lexical_resource: { type: "number" },
+        grammatical_range_accuracy: { type: "number" },
+      },
+      required: [
+        "task_response",
+        "coherence_cohesion",
+        "lexical_resource",
+        "grammatical_range_accuracy",
+      ],
+    },
+    summary: { type: "string" },
+    strengths: { type: "array", items: { type: "string" } },
+    key_issues: { type: "array", items: { type: "string" } },
+    improvement_actions: { type: "array", items: { type: "string" } },
+    focus_areas: { type: "array", items: { type: "string" } },
+    sentence_upgrades: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          source: { type: "string" },
+          better_version: { type: "string" },
+          why: { type: "string" },
+        },
+        required: ["source", "better_version", "why"],
+      },
+    },
+    vocabulary_upgrades: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          original: { type: "string" },
+          improved: { type: "string" },
+          reason: { type: "string" },
+        },
+        required: ["original", "improved", "reason"],
+      },
+    },
+    grammar_patterns: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          label: { type: "string" },
+          symptom: { type: "string" },
+          advice: { type: "string" },
+          evidence: { type: "string" },
+        },
+        required: ["label", "symptom", "advice", "evidence"],
+      },
+    },
+    paragraph_plan: { type: "array", items: { type: "string" } },
+    useful_phrases: { type: "array", items: { type: "string" } },
+  },
+  required: [
+    "overall_band",
+    "band_breakdown",
+    "summary",
+    "strengths",
+    "key_issues",
+    "improvement_actions",
+    "focus_areas",
+    "sentence_upgrades",
+    "vocabulary_upgrades",
+    "grammar_patterns",
+    "paragraph_plan",
+    "useful_phrases",
+  ],
+};
+
+const WRITING_REVIEW_INSTRUCTIONS = `
+You are a strict but helpful IELTS Academic Writing examiner and coach.
+Return feedback in Simplified Chinese, but keep quoted essay snippets and improved English phrases in English.
+Estimate IELTS Writing sub-scores in 0.5 increments from 0 to 9.
+For Task 1, treat the first criterion as Task Achievement and be strict about overview, data selection, and avoiding personal opinion.
+For Task 2, treat the first criterion as Task Response and be strict about fully answering the question, maintaining a clear position, and supporting ideas.
+Do not invent mistakes that are not visible in the essay.
+If the essay is clearly under length, state that directly.
+Keep feedback concise but actionable.
+Sentence upgrades must be plausible rewrites of the candidate's own sentences, not completely new content.
+Vocabulary upgrades should focus on replacing repetitive or weak expressions with more natural IELTS-style phrasing.
+Paragraph plans should help the candidate rewrite this exact essay more effectively on the next attempt.
+`.trim();
+
+function createError(message, status = 400) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}
+
+function normalizeProviderName(provider) {
+  const normalized = String(provider || "openai").trim().toLowerCase();
+  return normalized === "openrouter" ? "openrouter" : "openai";
+}
+
+function providerLabelFromBaseUrl(baseUrl) {
+  const normalized = String(baseUrl || "").trim().toLowerCase();
+  if (normalized.includes("api.gemai.cc")) {
+    return "GemAI";
+  }
+  if (normalized.includes("aihubmix.com")) {
+    return "AIHubMix";
+  }
+  return "OpenAI";
+}
+
+function getOpenAICompatiblePrimary(env) {
+  const baseUrl = String(env.OPENAI_BASE_URL || DEFAULT_GEMAI_BASE_URL).trim();
+  const label = providerLabelFromBaseUrl(baseUrl);
+  const defaultModel = label === "GemAI"
+    ? DEFAULT_GEMAI_WRITING_MODEL
+    : label === "AIHubMix"
+      ? DEFAULT_AIHUBMIX_WRITING_MODEL
+      : DEFAULT_OPENAI_WRITING_MODEL;
+
+  return {
+    label,
+    apiKey: String(env.OPENAI_API_KEY || "").trim(),
+    baseUrl,
+    model: String(env.OPENAI_WRITING_REVIEW_MODEL || defaultModel).trim(),
+    timeoutMs: Number(env.OPENAI_COMPAT_TIMEOUT_MS || OPENAI_COMPAT_TIMEOUT_MS),
+  };
+}
+
+function getOpenAICompatibleFallback(env) {
+  const apiKey = String(env.OPENAI_COMPAT_FALLBACK_API_KEY || "").trim();
+  const baseUrl = String(env.OPENAI_COMPAT_FALLBACK_BASE_URL || "").trim();
+  if (!apiKey || !baseUrl) {
+    return null;
+  }
+
+  const label = providerLabelFromBaseUrl(baseUrl);
+  const defaultModel = label === "GemAI"
+    ? DEFAULT_GEMAI_WRITING_MODEL
+    : label === "AIHubMix"
+      ? DEFAULT_AIHUBMIX_WRITING_MODEL
+      : DEFAULT_OPENAI_WRITING_MODEL;
+
+  return {
+    label,
+    apiKey,
+    baseUrl,
+    model: String(env.OPENAI_COMPAT_FALLBACK_WRITING_MODEL || defaultModel).trim(),
+    timeoutMs: Number(env.OPENAI_COMPAT_FALLBACK_TIMEOUT_MS || OPENAI_COMPAT_TIMEOUT_MS),
+  };
+}
+
+function getOpenRouterConfig(env) {
+  return {
+    label: "OpenRouter",
+    apiKey: String(env.OPENROUTER_API_KEY || "").trim(),
+    baseUrl: String(env.OPENROUTER_BASE_URL || DEFAULT_PROVIDER_BASE_URLS.openrouter).trim(),
+    model: String(env.OPENROUTER_WRITING_REVIEW_MODEL || DEFAULT_OPENROUTER_WRITING_MODEL).trim(),
+    timeoutMs: Number(env.OPENROUTER_TIMEOUT_MS || OPENROUTER_TIMEOUT_MS),
+  };
+}
+
+export function getAiStatus(env) {
+  const openaiPrimary = getOpenAICompatiblePrimary(env);
+  const openrouter = getOpenRouterConfig(env);
+  return {
+    available: Boolean(openaiPrimary.apiKey || openrouter.apiKey),
+    provider: "openai",
+    provider_label: openaiPrimary.label,
+    base_url: openaiPrimary.baseUrl,
+    review_model: openaiPrimary.model,
+    writing_review_model: openaiPrimary.model,
+    backends: {
+      openai: {
+        available: Boolean(openaiPrimary.apiKey),
+        provider: "openai",
+        provider_label: openaiPrimary.label,
+        base_url: openaiPrimary.baseUrl,
+        review_model: openaiPrimary.model,
+        writing_review_model: openaiPrimary.model,
+      },
+      openrouter: {
+        available: Boolean(openrouter.apiKey),
+        provider: "openrouter",
+        provider_label: openrouter.label,
+        base_url: openrouter.baseUrl,
+        review_model: openrouter.model,
+        writing_review_model: openrouter.model,
+      },
+    },
+  };
+}
+
+function extractChatCompletionText(payload, providerLabel) {
+  const choice = Array.isArray(payload?.choices) ? payload.choices[0] : null;
+  const content = choice?.message?.content;
+
+  if (typeof content === "string" && content.trim()) {
+    return content.trim();
+  }
+
+  if (Array.isArray(content)) {
+    const text = content
+      .map((item) => item?.text?.value || item?.text || "")
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+    if (text) {
+      return text;
+    }
+  }
+
+  throw createError(`${providerLabel} 返回了无法识别的响应格式。`, 502);
+}
+
+function parseJsonTextResponse(text, providerLabel) {
+  const raw = String(text || "").trim();
+  if (!raw) {
+    throw createError(`${providerLabel} 返回了空的 JSON 文本。`, 502);
+  }
+
+  const normalized = raw
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  const candidates = [raw, normalized];
+  const sourceList = [raw, normalized];
+  sourceList.forEach((source) => {
+    const firstCurly = source.indexOf("{");
+    const lastCurly = source.lastIndexOf("}");
+    if (firstCurly >= 0 && lastCurly > firstCurly) {
+      candidates.push(source.slice(firstCurly, lastCurly + 1));
+    }
+  });
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      try {
+        return JSON.parse(
+          candidate
+            .replace(/[“”]/g, "\"")
+            .replace(/[‘’]/g, "'")
+            .replace(/,\s*([}\]])/g, "$1"),
+        );
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  throw createError(`${providerLabel} 返回了无法解析的 JSON 结果。`, 502);
+}
+
+function clampBand(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return 0;
+  }
+  return Math.max(0, Math.min(9, Math.round(numeric * 2) / 2));
+}
+
+function toStringArray(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value)
+      .map(([key, item]) => {
+        const normalized = String(item || "").trim();
+        return normalized ? `${key}: ${normalized}` : "";
+      })
+      .filter(Boolean);
+  }
+  return [];
+}
+
+function normalizeSentenceUpgrades(value) {
+  return (Array.isArray(value) ? value : [])
+    .map((item) => {
+      if (item && typeof item === "object" && !Array.isArray(item)) {
+        return {
+          source: String(item.source || item.original || "").trim(),
+          better_version: String(item.better_version || item.improved || item.rewrite || item.suggestion || "").trim(),
+          why: String(item.why || item.reason || item.comment || "建议优化句子表达。").trim(),
+        };
+      }
+      const text = String(item || "").trim();
+      return {
+        source: "",
+        better_version: text,
+        why: "建议优化句子表达。",
+      };
+    })
+    .filter((item) => item.better_version);
+}
+
+function normalizeVocabularyUpgrades(value) {
+  return (Array.isArray(value) ? value : [])
+    .map((item) => {
+      if (item && typeof item === "object" && !Array.isArray(item)) {
+        return {
+          original: String(item.original || item.source || "").trim(),
+          improved: String(item.improved || item.better_version || item.suggestion || "").trim(),
+          reason: String(item.reason || item.why || "建议升级词汇表达。").trim(),
+        };
+      }
+      const text = String(item || "").trim();
+      return {
+        original: "",
+        improved: text,
+        reason: "建议升级词汇表达。",
+      };
+    })
+    .filter((item) => item.improved);
+}
+
+function normalizeGrammarPatterns(value) {
+  return (Array.isArray(value) ? value : [])
+    .map((item) => {
+      if (item && typeof item === "object" && !Array.isArray(item)) {
+        return {
+          label: String(item.label || item.title || "语法提醒").trim(),
+          symptom: String(item.symptom || item.issue || "").trim(),
+          advice: String(item.advice || item.reason || item.comment || "").trim(),
+          evidence: String(item.evidence || item.example || "").trim(),
+        };
+      }
+      const text = String(item || "").trim();
+      return {
+        label: text.slice(0, 18) || "语法提醒",
+        symptom: "",
+        advice: text,
+        evidence: "",
+      };
+    })
+    .filter((item) => item.label || item.advice);
+}
+
+function clampWritingReviewPayload(payload) {
+  const review = { ...(payload || {}) };
+  review.overall_band = clampBand(review.overall_band);
+  review.band_breakdown = review.band_breakdown || {};
+  const bandAliases = {
+    task_response: ["task_response", "task_achievement"],
+    coherence_cohesion: ["coherence_cohesion", "coherence_and_cohesion"],
+    lexical_resource: ["lexical_resource"],
+    grammatical_range_accuracy: ["grammatical_range_accuracy", "grammatical_range_and_accuracy"],
+  };
+  for (const [targetKey, aliases] of Object.entries(bandAliases)) {
+    const candidate = aliases
+      .map((key) => review.band_breakdown[key])
+      .find((value) => value !== undefined && value !== null);
+    review.band_breakdown[targetKey] = clampBand(candidate);
+  }
+
+  review.summary = String(review.summary || "").trim();
+  review.strengths = toStringArray(review.strengths).slice(0, 4);
+  review.key_issues = toStringArray(review.key_issues).slice(0, 4);
+  review.improvement_actions = toStringArray(review.improvement_actions).slice(0, 4);
+  review.focus_areas = toStringArray(review.focus_areas).slice(0, 4);
+  review.sentence_upgrades = normalizeSentenceUpgrades(review.sentence_upgrades).slice(0, 4);
+  review.vocabulary_upgrades = normalizeVocabularyUpgrades(review.vocabulary_upgrades).slice(0, 4);
+  review.grammar_patterns = normalizeGrammarPatterns(review.grammar_patterns).slice(0, 4);
+  review.paragraph_plan = toStringArray(review.paragraph_plan).slice(0, 5);
+  review.useful_phrases = toStringArray(review.useful_phrases).slice(0, 5);
+  return review;
+}
+
+function buildReviewPrompt(promptPayload, essayText, localMetrics, targetBand) {
+  return `
+请按 IELTS Academic Writing 的四项维度做评估。
+
+题目定义:
+${JSON.stringify(promptPayload || {}, null, 2)}
+
+考生作文:
+${essayText}
+
+本地统计指标:
+${JSON.stringify(localMetrics || {}, null, 2)}
+
+目标分数:
+${targetBand || "未提供"}
+
+请输出结构化结果，重点关注：
+1. Task Achievement / Task Response
+2. Coherence and Cohesion
+3. Lexical Resource
+4. Grammatical Range and Accuracy
+
+反馈应明确指出这篇作文最主要的问题、最值得保留的优点，以及下一轮改写时最该优先修改的地方。
+另外请额外返回：
+1. 2-4 个 focus_areas，使用短标签描述下一轮最需要盯住的改进方向。
+2. 2-4 个 sentence_upgrades，只改写考生原文里真实存在的句子。
+3. 2-4 个 vocabulary_upgrades，聚焦重复、口语化或偏弱的表达。
+4. 3-5 条 paragraph_plan，告诉考生如何更好地重写这篇作文的结构。
+5. 3-5 个 useful_phrases，给出适合这道题继续套用的 IELTS 写作表达。
+`.trim();
+}
+
+async function withTimeout(promise, timeoutMs, message) {
+  let timeoutId = null;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(createError(message, 504)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
+async function fetchJson(url, init, timeoutMs, label) {
+  const response = await withTimeout(fetch(url, init), timeoutMs, `${label} 请求超时，请尝试下一个可用模型。`);
+  const rawText = await response.text();
+  let payload = {};
+
+  try {
+    payload = rawText ? JSON.parse(rawText) : {};
+  } catch {
+    payload = { raw: rawText };
+  }
+
+  if (!response.ok) {
+    const message = payload?.error?.message || payload?.message || payload?.error || rawText || "未知错误";
+    throw createError(`${label} 接口返回错误：${message}`, response.status || 502);
+  }
+
+  return payload;
+}
+
+function shouldRetryWithFallback(error) {
+  const status = Number(error?.status || 0);
+  const message = String(error?.message || "").toLowerCase();
+  if ([408, 409, 429, 500, 502, 503, 504].includes(status)) {
+    return true;
+  }
+  return /timeout|timed out|rate limit|quota|exceeded|too many|overloaded|busy|temporar|unavailable|fetch failed|invalid json|无法解析的 json|malformed json/.test(message);
+}
+
+async function requestFromOpenAICompatible(endpoint, userInput) {
+  if (!endpoint?.apiKey) {
+    throw createError(`缺少 ${endpoint?.label || "OpenAI 兼容"} 的 API Key。`, 503);
+  }
+  if (!endpoint?.baseUrl) {
+    throw createError(`缺少 ${endpoint?.label || "OpenAI 兼容"} 的 Base URL。`, 503);
+  }
+
+  const response = await fetchJson(
+    `${endpoint.baseUrl}/chat/completions`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${endpoint.apiKey}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        model: endpoint.model,
+        messages: [
+          { role: "system", content: WRITING_REVIEW_INSTRUCTIONS },
+          {
+            role: "user",
+            content: `${userInput}\n\n只返回一个合法 JSON 对象，不要添加 markdown、解释、思考过程或代码块。\nJSON Schema:\n${JSON.stringify(WRITING_REVIEW_SCHEMA)}`,
+          },
+        ],
+        temperature: 0.2,
+        stream: false,
+        response_format: { type: "json_object" },
+      }),
+    },
+    endpoint.timeoutMs,
+    endpoint.label,
+  );
+
+  return {
+    provider_label: endpoint.label,
+    model: String(response?.model || endpoint.model || ""),
+    review: clampWritingReviewPayload(
+      parseJsonTextResponse(extractChatCompletionText(response, endpoint.label), endpoint.label),
+    ),
+  };
+}
+
+async function requestFromOpenRouter(config, userInput) {
+  if (!config.apiKey) {
+    throw createError("缺少 OPENROUTER_API_KEY。", 503);
+  }
+
+  const response = await fetchJson(
+    `${config.baseUrl}/chat/completions`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        model: config.model,
+        messages: [
+          { role: "system", content: WRITING_REVIEW_INSTRUCTIONS },
+          {
+            role: "user",
+            content: `${userInput}\n\n只返回一个合法 JSON 对象，不要添加 markdown、解释、思考过程或代码块。\nJSON Schema:\n${JSON.stringify(WRITING_REVIEW_SCHEMA)}`,
+          },
+        ],
+        temperature: 0.2,
+        stream: false,
+      }),
+    },
+    config.timeoutMs,
+    config.label,
+  );
+
+  return {
+    provider_label: config.label,
+    model: String(response?.model || config.model || ""),
+    review: clampWritingReviewPayload(
+      parseJsonTextResponse(extractChatCompletionText(response, config.label), config.label),
+    ),
+  };
+}
+
+export async function requestStructuredReview(env, providerName, promptPayload, essayText, localMetrics, targetBand) {
+  const provider = normalizeProviderName(providerName);
+  const userInput = buildReviewPrompt(promptPayload, essayText, localMetrics, targetBand);
+
+  if (provider === "openrouter") {
+    return requestFromOpenRouter(getOpenRouterConfig(env), userInput);
+  }
+
+  const primary = getOpenAICompatiblePrimary(env);
+  const fallback = getOpenAICompatibleFallback(env);
+
+  try {
+    return await requestFromOpenAICompatible(primary, userInput);
+  } catch (error) {
+    if (!fallback || !shouldRetryWithFallback(error)) {
+      throw error;
+    }
+    return requestFromOpenAICompatible(fallback, userInput);
+  }
+}

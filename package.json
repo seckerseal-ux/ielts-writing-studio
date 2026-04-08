@@ -1,0 +1,12 @@
+{
+  "name": "writing-studio",
+  "private": true,
+  "scripts": {
+    "cf:dev": "npx wrangler pages dev .",
+    "cf:deploy": "npx wrangler pages deploy .",
+    "cf:d1:apply": "npx wrangler d1 execute ielts-writing-studio --file=./cloudflare/schema.sql"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}
