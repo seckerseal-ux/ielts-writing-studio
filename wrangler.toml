@@ -1,3 +1,8 @@
 name = "ielts-writing-studio"
 compatibility_date = "2026-04-08"
 pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "WRITING_DB"
+database_name = "ielts-writing-studio"
+database_id = "c482e957-2f6f-4a45-bbf2-100cbb5688cd"
