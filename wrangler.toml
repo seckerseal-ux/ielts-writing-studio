@@ -2,6 +2,11 @@ name = "ielts-writing-studio"
 compatibility_date = "2026-04-08"
 pages_build_output_dir = "."
 
+[[kv_namespaces]]
+binding = "REVIEW_ATLAS_SYNC"
+id = "7cd58bae914c4f6aac29d45ae69038b7"
+preview_id = "7cd58bae914c4f6aac29d45ae69038b7"
+
 [[d1_databases]]
 binding = "WRITING_DB"
 database_name = "ielts-writing-studio"
