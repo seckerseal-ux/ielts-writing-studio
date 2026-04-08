@@ -296,6 +296,66 @@ const phraseBank = [
     example: "Cultural traditions should be protected, but they also need to adapt to modern social realities if they are to remain relevant.",
     tips: ["旅游、文化、全球化题适用。", "protect + adapt 形成平衡观点。"],
   },
+  {
+    id: "p34",
+    exam: "kaoyan",
+    task: "small",
+    category: "应用文开头",
+    title: "开门见山交代来意",
+    structure: "I am writing this email/letter to invite you to ... / to express ... / to apply for ... .",
+    example: "I am writing this email to invite you to deliver a short speech at our graduation forum next Friday.",
+    tips: ["考研小作文开头别绕远路，先把来意亮出来。", "invite / express / apply / recommend 这些动词很常用。"],
+  },
+  {
+    id: "p35",
+    exam: "kaoyan",
+    task: "small",
+    category: "应用文请求",
+    title: "礼貌提出请求",
+    structure: "I would appreciate it if you could ... , as this would ... .",
+    example: "I would appreciate it if you could confirm your availability, as this would help us finalize the schedule.",
+    tips: ["小作文的礼貌感很重要，但别礼貌到把重点埋了。", "as this would... 可以顺手补一句理由。"],
+  },
+  {
+    id: "p36",
+    exam: "kaoyan",
+    task: "small",
+    category: "应用文结尾",
+    title: "礼貌收束和等回复",
+    structure: "Thank you for your time, and I look forward to hearing from you soon.",
+    example: "Thank you for your time, and I look forward to hearing from you soon.",
+    tips: ["小作文结尾不要突然失踪。", "look forward to hearing from you 是安全牌，但很好用。"],
+  },
+  {
+    id: "p37",
+    exam: "kaoyan",
+    task: "large",
+    category: "图画评论",
+    title: "先点画面，再点寓意",
+    structure: "The picture is both striking and thought-provoking, revealing that ... .",
+    example: "The picture is both striking and thought-provoking, revealing that some people are more eager to record a problem than to solve it.",
+    tips: ["考研大作文不是现场解说比赛。", "描述画面后要立刻拐去寓意和观点。"],
+  },
+  {
+    id: "p38",
+    exam: "kaoyan",
+    task: "large",
+    category: "图表评论",
+    title: "把数据拉向观点",
+    structure: "The chart reflects a noticeable trend: ... , which deserves serious attention.",
+    example: "The chart reflects a noticeable trend: students are spending more time on short videos than on reading, which deserves serious attention.",
+    tips: ["大作文里的图表别只报数，要点出现象。", "which deserves serious attention 很适合往评论走。"],
+  },
+  {
+    id: "p39",
+    exam: "kaoyan",
+    task: "large",
+    category: "结尾收束",
+    title: "收回现实层面",
+    structure: "What matters is not merely ... , but whether we can ... in real life.",
+    example: "What matters is not merely recognizing the problem, but whether we can turn awareness into real action in daily life.",
+    tips: ["考研大作文结尾很适合从抽象回到现实。", "not merely... but whether... 这类句子很有收束感。"],
+  },
 ];
 
 const blankExercises = [
@@ -445,6 +505,61 @@ const blankExercises = [
     blanks: [{ answers: ["convinced"], answerDisplay: "convinced", hint: "过去分词" }],
     tip: "结尾句重点是稳定态度，不再加新内容。",
   },
+  {
+    id: "bk1",
+    exam: "kaoyan",
+    task: "small",
+    title: "考研小作文：开头交代来意",
+    focus: "应用文开头",
+    prompt: "用最稳的方式写邀请邮件开头。",
+    segments: ["I am writing this email to ", " you to attend our campus culture festival next Friday."],
+    blanks: [{ answers: ["invite"], answerDisplay: "invite", hint: "核心动词" }],
+    tip: "开头先说人话：我写这封信就是为了什么。",
+  },
+  {
+    id: "bk2",
+    exam: "kaoyan",
+    task: "small",
+    title: "考研小作文：礼貌请求",
+    focus: "应用文请求",
+    prompt: "礼貌地请对方确认时间。",
+    segments: ["I would appreciate it if you could ", " your availability at your earliest convenience."],
+    blanks: [{ answers: ["confirm"], answerDisplay: "confirm", hint: "确认动词" }],
+    tip: "小作文的礼貌像盐，得有，但别一把倒进锅里。",
+  },
+  {
+    id: "bk3",
+    exam: "kaoyan",
+    task: "small",
+    title: "考研小作文：结尾收束",
+    focus: "应用文结尾",
+    prompt: "用礼貌但不拖沓的方式等回复。",
+    segments: ["Thank you for your time, and I look forward to ", " from you soon."],
+    blanks: [{ answers: ["hearing"], answerDisplay: "hearing", hint: "动名词" }],
+    tip: "结尾别突然消失，给对方一个体面的下车点。",
+  },
+  {
+    id: "bk4",
+    exam: "kaoyan",
+    task: "large",
+    title: "考研大作文：图画评论",
+    focus: "图画评论",
+    prompt: "把画面描述拉向寓意。",
+    segments: ["The picture is both striking and thought-provoking, ", " that some people prefer recording a problem to solving it."],
+    blanks: [{ answers: ["revealing", "showing"], answerDisplay: "revealing", hint: "现在分词" }],
+    tip: "考研大作文不是 CCTV 直播，请尽快进入评论模式。",
+  },
+  {
+    id: "bk5",
+    exam: "kaoyan",
+    task: "large",
+    title: "考研大作文：图表评论",
+    focus: "图表评论",
+    prompt: "把数据趋势写成一句评论。",
+    segments: ["The chart reflects a noticeable trend, ", " deserves serious attention."],
+    blanks: [{ answers: ["which"], answerDisplay: "which", hint: "关系代词" }],
+    tip: "数据写完不点评，就像饭做好不端上桌。",
+  },
 ];
 
 const paragraphPrompts = [
@@ -590,6 +705,70 @@ const paragraphPrompts = [
     checklist: ["只重申，不开新论点", "尽量把态度写稳", "保持 concise"],
     keywords: ["governments", "tax", "sugary drinks", "public health", "agree"],
     categories: ["结尾收束", "健康与生活", "观点表达"],
+  },
+  {
+    id: "paraK1",
+    exam: "kaoyan",
+    task: "small",
+    type: "opening",
+    title: "考研小作文开头：邀请校友分享经验",
+    prompt: "Write an email to an alumnus, Mr. Zhang, inviting him to give a career-sharing talk to students in your department next Friday evening.",
+    source: "考研英语应用文风格题",
+    notes: ["交代写信目的", "说明活动时间", "语气要礼貌但别拖泥带水"],
+    targetWords: [60, 100],
+    checklist: ["开头要有称呼", "第一段先说 why you are writing", "尽量把邀请说得具体一点"],
+    keywords: ["email", "invite", "career-sharing talk", "department", "next Friday"],
+    categories: ["应用文", "邀请", "开头"],
+    ideaHints: ["第一句先把写信目的亮出来，别先寒暄三圈。", "可以顺手补一句 why he is a good fit，比如 his experience would be inspiring to students."],
+    exampleIdeas: ["例如，你可以说明这场分享会能帮助学生更早理解行业要求和职业选择。"],
+  },
+  {
+    id: "paraK2",
+    exam: "kaoyan",
+    task: "small",
+    type: "closing",
+    title: "考研小作文结尾：通知与联系方式",
+    prompt: "Write a notice to recruit volunteers for an international book fair on campus.",
+    source: "考研英语应用文风格题",
+    notes: ["说明 volunteers will do what", "写清报名方式", "结尾要利落"],
+    targetWords: [60, 100],
+    checklist: ["别漏了活动信息", "结尾最好给 contact method", "notice 的句子要短一点更稳"],
+    keywords: ["notice", "recruit volunteers", "international book fair", "campus", "contact"],
+    categories: ["应用文", "通知", "结尾"],
+    ideaHints: ["正文最好直接列任务、时间和报名方式，不要写成长篇散文。", "结尾可以用 Please contact... / Sign up before... 这类很直给的句子。"],
+    exampleIdeas: ["比如补一句 volunteers will help with registration, guidance and venue support，会显得信息更完整。"],
+  },
+  {
+    id: "paraK3",
+    exam: "kaoyan",
+    task: "large",
+    type: "analysis",
+    title: "考研大作文主体段：图表分析",
+    prompt: "The chart shows the daily time college students spend on smartphone entertainment and physical exercise from 2019 to 2025.",
+    source: "考研英语大作文风格题",
+    notes: ["smartphone entertainment time rose steadily", "exercise time dropped first and then recovered slightly", "main contrast is increasingly obvious"],
+    targetWords: [90, 140],
+    checklist: ["先抓最醒目的趋势", "不要只报数字", "最好写一句你对现象的理解"],
+    keywords: ["chart", "college students", "smartphone", "exercise", "trend"],
+    categories: ["图表作文", "趋势分析", "主体展开"],
+    ideaHints: ["大作文别只当图表说明文写，后面最好接一句 what this trend says about student life。", "可以用 the widening gap / a worrying tendency 这类概括把数据拉向观点。"],
+    exampleIdeas: ["例如，你可以指出 convenience and digital dependence may partly explain why leisure screen time keeps climbing."],
+  },
+  {
+    id: "paraK4",
+    exam: "kaoyan",
+    task: "large",
+    type: "comment",
+    title: "考研大作文收束段：图画寓意",
+    prompt: "The picture shows several people holding up their phones to record a fallen cyclist, while almost no one is trying to help.",
+    source: "考研英语大作文风格题",
+    notes: ["可以写 indifference, online performance, real responsibility", "最后要落回自己的判断"],
+    targetWords: [80, 130],
+    checklist: ["不要只描述画面", "至少点出寓意", "结尾尽量收回现实层面"],
+    keywords: ["picture", "phones", "record", "fallen cyclist", "help", "responsibility"],
+    categories: ["图画作文", "寓意评论", "结尾收束"],
+    ideaHints: ["图画作文最怕只做现场播报，最好用一句话点出它在讽刺什么。", "可以写 technology is convenient, but it should not weaken basic human responsibility."],
+    exampleIdeas: ["例如，你可以把 recording for attention 和 offering real help 直接对照起来，主线会更稳。"],
   },
 ];
 
@@ -937,6 +1116,142 @@ const essayPrompts = [
     categories: ["问题解决", "科技话题", "教育话题"],
     minimumWords: 250,
     topics: ["科技", "教育", "儿童"],
+  },
+  {
+    id: "essayK1",
+    exam: "kaoyan",
+    task: "small",
+    title: "邀请邮件：请外教参加毕业论坛",
+    genre: "email invitation",
+    source: "考研英语小作文风格题",
+    prompt: "Write an email to invite Professor Smith, a visiting teacher, to give a short speech at your university graduation forum.",
+    details: ["说明活动时间和主题", "表达邀请原因", "希望对方回复是否方便参加"],
+    requirements: ["至少 100 词", "格式完整", "语气礼貌但不要过分铺垫"],
+    keywords: ["invite", "professor", "graduation forum", "speech", "reply"],
+    categories: ["应用文", "邀请", "邮件"],
+    minimumWords: 100,
+    topics: ["校园", "活动", "邀请"],
+    ideaHints: ["第一段先亮来意，第二段补活动信息和邀请理由，结尾再礼貌等回复。", "别把邀请函写成抒情散文，信息完整比句子飘逸更重要。"],
+    exampleIdeas: ["例如可以补一句 students would benefit greatly from your views on academic growth and career planning。"],
+  },
+  {
+    id: "essayK2",
+    exam: "kaoyan",
+    task: "small",
+    title: "通知：招募校园活动志愿者",
+    genre: "notice",
+    source: "考研英语小作文风格题",
+    prompt: "Write a notice to recruit student volunteers for an international culture festival on campus.",
+    details: ["说明活动时间地点", "列出主要工作", "写清报名方式和截止时间"],
+    requirements: ["至少 100 词", "notice 语气直接清楚", "信息尽量分组写"],
+    keywords: ["notice", "recruit", "student volunteers", "international culture festival", "contact"],
+    categories: ["应用文", "通知", "校园"],
+    minimumWords: 100,
+    topics: ["校园", "通知", "活动"],
+    ideaHints: ["通知最稳的结构是：活动简介 -> 志愿者职责 -> 报名方式。", "句子可以短一点，别把 notice 写成文学评论。"],
+    exampleIdeas: ["例如可以写 volunteers will guide visitors, help with registration and maintain order at the venue。"],
+  },
+  {
+    id: "essayK3",
+    exam: "kaoyan",
+    task: "small",
+    title: "致歉邮件：改约学术讨论时间",
+    genre: "email apology",
+    source: "考研英语小作文风格题",
+    prompt: "Write an email to apologize for missing a scheduled academic discussion and ask to rearrange the meeting.",
+    details: ["先道歉", "简要解释原因", "提出新的时间建议"],
+    requirements: ["至少 100 词", "态度真诚", "解释原因但不要过度展开"],
+    keywords: ["apologize", "miss", "academic discussion", "rearrange", "meeting"],
+    categories: ["应用文", "致歉", "邮件"],
+    minimumWords: 100,
+    topics: ["校园", "沟通", "致歉"],
+    ideaHints: ["开头先认错，中间说明情况，最后给出新的时间选择。", "致歉信的重点是补救动作，不是把苦衷写成连续剧。"],
+    exampleIdeas: ["比如可以写 a temporary network failure / an urgent class matter caused the delay，并马上提出 another suitable time。"],
+  },
+  {
+    id: "essayK4",
+    exam: "kaoyan",
+    task: "small",
+    title: "建议信：推荐宿舍节能做法",
+    genre: "letter of suggestion",
+    source: "考研英语小作文风格题",
+    prompt: "Write a letter to your dormitory manager, suggesting practical ways to save electricity in student residences.",
+    details: ["点出问题", "提出两到三条建议", "写清这些建议的好处"],
+    requirements: ["至少 100 词", "建议要具体", "语气礼貌且有条理"],
+    keywords: ["suggest", "save electricity", "student residences", "practical ways", "manager"],
+    categories: ["应用文", "建议信", "校园"],
+    minimumWords: 100,
+    topics: ["校园", "环保", "建议"],
+    ideaHints: ["主体段可以按措施分条写，比如 lights, air-conditioners, and awareness campaigns。", "建议句最好带结果，不要只写 should do this。"],
+    exampleIdeas: ["例如可以写 installing reminder stickers and setting common-room energy rules may reduce unnecessary power use。"],
+  },
+  {
+    id: "essayK5",
+    exam: "kaoyan",
+    task: "large",
+    title: "图表作文：阅读时间和短视频时长",
+    genre: "chart commentary",
+    source: "考研英语大作文风格题",
+    prompt: "The chart shows the average daily time university students spent on reading and watching short videos from 2018 to 2025. Write an essay to describe the chart and comment on the trend.",
+    details: ["reading time fell from 82 to 46 minutes", "short-video time rose from 28 to 94 minutes", "the gap reversed after 2021"],
+    requirements: ["至少 160 词", "先描述主要趋势", "后面要评论其现实含义"],
+    keywords: ["chart", "reading", "short videos", "university students", "trend", "comment"],
+    categories: ["图表作文", "趋势分析", "评论"],
+    minimumWords: 160,
+    topics: ["校园", "科技", "阅读"],
+    ideaHints: ["先抓最明显的反向变化，再点出这种变化 why it matters。", "后半段可以写 fragmented attention, habit change 或 knowledge quality。"],
+    exampleIdeas: ["例如，你可以指出 convenient entertainment is replacing deep reading, which may weaken students' ability to concentrate for long periods。"],
+  },
+  {
+    id: "essayK6",
+    exam: "kaoyan",
+    task: "large",
+    title: "图表作文：毕业生就业选择变化",
+    genre: "chart commentary",
+    source: "考研英语大作文风格题",
+    prompt: "The chart compares the percentage of graduates choosing public service, large companies and entrepreneurship between 2016 and 2025. Write an essay based on the chart and give your comments.",
+    details: ["public service rose steadily", "large companies remained high but declined slightly", "entrepreneurship fluctuated at a lower level"],
+    requirements: ["至少 160 词", "描述 + 评论都要有", "不要只平铺数字"],
+    keywords: ["graduates", "public service", "large companies", "entrepreneurship", "chart"],
+    categories: ["图表作文", "就业", "评论"],
+    minimumWords: 160,
+    topics: ["工作", "校园", "社会"],
+    ideaHints: ["评论部分可以写 stability, risk preference 和 social expectations 这些角度。", "别把每条曲线都念一遍，抓最有故事的那条。"],
+    exampleIdeas: ["例如，你可以说 the growing preference for public service may reflect a stronger desire for stability in an uncertain job market。"],
+  },
+  {
+    id: "essayK7",
+    exam: "kaoyan",
+    task: "large",
+    title: "图画作文：围观者只录像不帮忙",
+    genre: "picture commentary",
+    source: "考研英语大作文风格题",
+    prompt: "The picture shows a fallen cyclist surrounded by people holding up phones, while almost no one offers help. Write an essay to describe the picture and comment on what it suggests.",
+    details: ["describe what people are doing", "point out indifference and performance mentality", "return to social responsibility"],
+    requirements: ["至少 160 词", "先简洁描述画面", "再写寓意和判断"],
+    keywords: ["picture", "fallen cyclist", "phones", "help", "responsibility", "comment"],
+    categories: ["图画作文", "社会评论", "责任"],
+    minimumWords: 160,
+    topics: ["社会", "科技", "责任"],
+    ideaHints: ["开头别写太长，画面描述 1 到 2 句足够，后面马上转寓意。", "主线可以写 digital spectatorship 和 real-world responsibility 的反差。"],
+    exampleIdeas: ["例如，你可以指出 some people care more about catching attention online than offering timely help offline。"],
+  },
+  {
+    id: "essayK8",
+    exam: "kaoyan",
+    task: "large",
+    title: "图画作文：书本与手机的对照",
+    genre: "picture commentary",
+    source: "考研英语大作文风格题",
+    prompt: "The picture shows an elderly man reading with a child, while several young adults nearby are absorbed in their phones. Write an essay describing the picture and commenting on the message behind it.",
+    details: ["compare the calm reading scene with the phone users", "comment on deep learning vs distraction", "end with a practical call for balance"],
+    requirements: ["至少 160 词", "描述和评论要平衡", "最好落回现实建议"],
+    keywords: ["picture", "reading", "phones", "child", "distraction", "balance"],
+    categories: ["图画作文", "教育", "评论"],
+    minimumWords: 160,
+    topics: ["教育", "科技", "阅读"],
+    ideaHints: ["可以把图画写成两组人的对照，这样结构会很稳。", "结尾别只喊口号，落到 balanced use of technology 会更实在。"],
+    exampleIdeas: ["例如，你可以写 technology is useful, but without self-discipline it can quietly erode time for reading and reflection。"],
   },
 ];
 
@@ -1290,10 +1605,46 @@ const AI_BACKEND_OPTIONS = {
   openai: { label: "OpenAI 兼容（GemAI / AIHubMix）", keyName: "OPENAI_API_KEY" },
 };
 const RUNTIME_CONFIG = normalizeRuntimeConfig(window.__IELTS_WRITING_STUDIO_CONFIG__ || {});
+const WRITING_EXAMS = {
+  ielts: {
+    label: "雅思写作",
+    preferredTasks: [
+      { value: "all", label: "大小作文一起练" },
+      { value: "task1", label: "先攻 Task 1" },
+      { value: "task2", label: "先攻 Task 2" },
+    ],
+    essayTasks: [
+      { value: "task1", label: "Task 1" },
+      { value: "task2", label: "Task 2" },
+    ],
+    timerSeconds: {
+      task1: 20 * 60,
+      task2: 40 * 60,
+    },
+  },
+  kaoyan: {
+    label: "考研英语写作",
+    preferredTasks: [
+      { value: "all", label: "大小作文一起练" },
+      { value: "small", label: "先攻小作文" },
+      { value: "large", label: "先攻大作文" },
+    ],
+    essayTasks: [
+      { value: "small", label: "小作文" },
+      { value: "large", label: "大作文" },
+    ],
+    timerSeconds: {
+      small: 15 * 60,
+      large: 25 * 60,
+    },
+  },
+};
 
 const defaultState = {
+  exam: "ielts",
   updatedAt: 0,
   profile: {
+    preferredExam: "ielts",
     currentBand: "6.0",
     targetBand: "7.0",
     preferredTask: "all",
@@ -1308,7 +1659,9 @@ const defaultState = {
     patternTask: "all",
     patternCategory: "all",
     blankId: blankExercises[0].id,
+    paragraphExam: "ielts",
     paragraphId: paragraphPrompts[0].id,
+    essayExam: "ielts",
     essayTask: "task2",
     essayTopic: "all",
     essayId: essayPrompts.find((item) => item.task === "task2").id,
@@ -1367,6 +1720,7 @@ const els = {
   patternTaskFilter: document.querySelector("#pattern-task-filter"),
   patternCategoryFilter: document.querySelector("#pattern-category-filter"),
   patternGrid: document.querySelector("#pattern-grid"),
+  preferredExam: document.querySelector("#preferred-exam"),
   currentBand: document.querySelector("#current-band"),
   targetBand: document.querySelector("#target-band"),
   preferredTask: document.querySelector("#preferred-task"),
@@ -1374,6 +1728,7 @@ const els = {
   blankCard: document.querySelector("#blank-card"),
   blankResult: document.querySelector("#blank-result"),
   blankRandom: document.querySelector("#blank-random"),
+  paragraphExamFilter: document.querySelector("#paragraph-exam-filter"),
   paragraphSelect: document.querySelector("#paragraph-select"),
   paragraphPrompt: document.querySelector("#paragraph-prompt"),
   paragraphText: document.querySelector("#paragraph-text"),
@@ -1381,6 +1736,7 @@ const els = {
   paragraphEvaluate: document.querySelector("#paragraph-evaluate"),
   paragraphRandom: document.querySelector("#paragraph-random"),
   paragraphResult: document.querySelector("#paragraph-result"),
+  essayExamFilter: document.querySelector("#essay-exam-filter"),
   essayTaskFilter: document.querySelector("#essay-task-filter"),
   essayTopicFilter: document.querySelector("#essay-topic-filter"),
   essaySelect: document.querySelector("#essay-select"),
@@ -1475,6 +1831,105 @@ function saveState(options = {}) {
   }
 }
 
+function normalizeExam(value) {
+  return value === "kaoyan" ? "kaoyan" : "ielts";
+}
+
+function getExamConfig(exam) {
+  return WRITING_EXAMS[normalizeExam(exam)];
+}
+
+function getPromptExam(prompt) {
+  return normalizeExam(prompt?.exam || "ielts");
+}
+
+function getScopedExam(item) {
+  return normalizeExam(item?.exam || "ielts");
+}
+
+function labelForExam(exam) {
+  return getExamConfig(exam).label;
+}
+
+function labelForTask(task) {
+  if (task === "small") {
+    return "小作文";
+  }
+  if (task === "large") {
+    return "大作文";
+  }
+  return task === "task1" ? "Task 1" : "Task 2";
+}
+
+function getDefaultEssayTaskForExam(exam) {
+  return normalizeExam(exam) === "kaoyan" ? "large" : "task2";
+}
+
+function getFirstPromptId(collection, exam, task = "") {
+  const normalizedExam = normalizeExam(exam);
+  const candidates = collection.filter((item) => getPromptExam(item) === normalizedExam);
+  const narrowed = task ? candidates.filter((item) => item.task === task) : candidates;
+  return (narrowed[0] || candidates[0] || collection[0])?.id || "";
+}
+
+function getEssayTaskOptions(exam) {
+  return getExamConfig(exam).essayTasks;
+}
+
+function getPreferredTaskOptions(exam) {
+  return getExamConfig(exam).preferredTasks;
+}
+
+function getPatternTaskOptions(exam) {
+  return getExamConfig(exam).preferredTasks;
+}
+
+function getTimerSecondsForCurrentEssayTask() {
+  const config = getExamConfig(state.selections.essayExam);
+  return config.timerSeconds[state.selections.essayTask] || 25 * 60;
+}
+
+function normalizePromptDefinition(prompt) {
+  return {
+    exam: getPromptExam(prompt),
+    ...(prompt || {}),
+  };
+}
+
+function getParagraphPromptPool() {
+  const selectedExam = normalizeExam(state.selections.paragraphExam);
+  let pool = paragraphPrompts.filter((item) => getPromptExam(item) === selectedExam);
+  const preferredTask = selectedExam === normalizeExam(state.profile.preferredExam) ? state.profile.preferredTask : "all";
+  if (preferredTask !== "all") {
+    pool = pool.filter((item) => item.task === preferredTask);
+  }
+  return pool;
+}
+
+function getPatternPool() {
+  const selectedExam = normalizeExam(state.profile.preferredExam);
+  return phraseBank.filter((item) => {
+    const examMatch = getScopedExam(item) === selectedExam;
+    const taskMatch = state.selections.patternTask === "all" || item.task === state.selections.patternTask;
+    const categoryMatch = state.selections.patternCategory === "all" || item.category === state.selections.patternCategory;
+    return examMatch && taskMatch && categoryMatch;
+  });
+}
+
+function getBlankPool() {
+  const selectedExam = normalizeExam(state.profile.preferredExam);
+  const preferredTask = state.profile.preferredTask;
+  let pool = blankExercises.filter((item) => {
+    const examMatch = getScopedExam(item) === selectedExam;
+    const taskMatch = preferredTask === "all" || item.task === preferredTask;
+    return examMatch && taskMatch;
+  });
+  if (!pool.length) {
+    pool = blankExercises.filter((item) => getScopedExam(item) === selectedExam);
+  }
+  return pool.length ? pool : blankExercises;
+}
+
 function init() {
   bindScrollButtons();
   hydrateControls();
@@ -1498,16 +1953,31 @@ function bindScrollButtons() {
 }
 
 function hydrateControls() {
+  state.profile.preferredExam = normalizeExam(state.profile.preferredExam);
+  state.selections.paragraphExam = normalizeExam(state.selections.paragraphExam || state.profile.preferredExam);
+  state.selections.essayExam = normalizeExam(state.selections.essayExam || state.profile.preferredExam);
+  if (els.preferredExam) {
+    els.preferredExam.value = state.profile.preferredExam;
+  }
+  populatePreferredTaskOptions();
   els.currentBand.value = state.profile.currentBand;
   els.targetBand.value = state.profile.targetBand;
   els.preferredTask.value = state.profile.preferredTask;
+  populatePatternTaskOptions();
   els.patternTaskFilter.value = state.selections.patternTask;
   populatePatternCategories();
   els.patternCategoryFilter.value = state.selections.patternCategory;
   populateBlankSelect();
   els.blankSelect.value = state.selections.blankId;
+  if (els.paragraphExamFilter) {
+    els.paragraphExamFilter.value = state.selections.paragraphExam;
+  }
   populateParagraphSelect();
   els.paragraphSelect.value = state.selections.paragraphId;
+  if (els.essayExamFilter) {
+    els.essayExamFilter.value = state.selections.essayExam;
+  }
+  populateEssayTaskOptions();
   els.essayTaskFilter.value = state.selections.essayTask;
   populateEssayTopics();
   els.essayTopicFilter.value = state.selections.essayTopic;
@@ -1536,6 +2006,8 @@ function bindEvents() {
     saveState();
   });
 
+  els.preferredExam?.addEventListener("change", handlePreferredExamUpdate);
+
   [els.currentBand, els.targetBand, els.preferredTask].forEach((element) => {
     element.addEventListener("change", handleProfileUpdate);
   });
@@ -1547,9 +2019,17 @@ function bindEvents() {
   });
 
   els.blankRandom.addEventListener("click", () => {
-    state.selections.blankId = randomFrom(blankExercises).id;
+    state.selections.blankId = randomFrom(getBlankPool()).id;
     els.blankSelect.value = state.selections.blankId;
     renderBlankExercise();
+    saveState();
+  });
+
+  els.paragraphExamFilter?.addEventListener("change", () => {
+    state.selections.paragraphExam = normalizeExam(els.paragraphExamFilter.value);
+    populateParagraphSelect();
+    els.paragraphSelect.value = state.selections.paragraphId;
+    renderParagraphPrompt();
     saveState();
   });
 
@@ -1560,7 +2040,7 @@ function bindEvents() {
   });
 
   els.paragraphRandom.addEventListener("click", () => {
-    const pool = filterByPreferredTask(paragraphPrompts);
+    const pool = getParagraphPromptPool();
     state.selections.paragraphId = randomFrom(pool).id;
     els.paragraphSelect.value = state.selections.paragraphId;
     renderParagraphPrompt();
@@ -1574,6 +2054,21 @@ function bindEvents() {
   });
 
   els.paragraphEvaluate.addEventListener("click", evaluateParagraph);
+
+  els.essayExamFilter?.addEventListener("change", () => {
+    state.selections.essayExam = normalizeExam(els.essayExamFilter.value);
+    state.selections.essayTask = getDefaultEssayTaskForExam(state.selections.essayExam);
+    state.selections.essayTopic = "all";
+    populateEssayTaskOptions();
+    resetTimerForTask();
+    populateEssayTopics();
+    populateEssaySelect();
+    els.essayTopicFilter.value = state.selections.essayTopic;
+    els.essaySelect.value = state.selections.essayId;
+    renderEssayPrompt();
+    renderTimer();
+    saveState();
+  });
 
   els.essayTaskFilter.addEventListener("change", () => {
     state.selections.essayTask = els.essayTaskFilter.value;
@@ -1669,8 +2164,48 @@ function handleProfileUpdate() {
   state.profile.currentBand = els.currentBand.value;
   state.profile.targetBand = els.targetBand.value;
   state.profile.preferredTask = els.preferredTask.value;
+  populatePatternTaskOptions();
+  populatePatternCategories();
+  populateBlankSelect();
+  els.blankSelect.value = state.selections.blankId;
   populateParagraphSelect();
   populateEssaySelect();
+  renderAll();
+  saveState();
+}
+
+function handlePreferredExamUpdate() {
+  state.profile.preferredExam = normalizeExam(els.preferredExam.value);
+  state.profile.preferredTask = "all";
+  state.selections.patternTask = "all";
+  state.selections.patternCategory = "all";
+  state.selections.paragraphExam = state.profile.preferredExam;
+  state.selections.essayExam = state.profile.preferredExam;
+  state.selections.essayTask = getDefaultEssayTaskForExam(state.profile.preferredExam);
+  state.selections.essayTopic = "all";
+  populatePreferredTaskOptions();
+  els.preferredTask.value = state.profile.preferredTask;
+  populatePatternTaskOptions();
+  els.patternTaskFilter.value = state.selections.patternTask;
+  populatePatternCategories();
+  els.patternCategoryFilter.value = state.selections.patternCategory;
+  populateBlankSelect();
+  els.blankSelect.value = state.selections.blankId;
+  if (els.paragraphExamFilter) {
+    els.paragraphExamFilter.value = state.selections.paragraphExam;
+  }
+  populateParagraphSelect();
+  els.paragraphSelect.value = state.selections.paragraphId;
+  if (els.essayExamFilter) {
+    els.essayExamFilter.value = state.selections.essayExam;
+  }
+  populateEssayTaskOptions();
+  els.essayTaskFilter.value = state.selections.essayTask;
+  populateEssayTopics();
+  els.essayTopicFilter.value = state.selections.essayTopic;
+  populateEssaySelect();
+  els.essaySelect.value = state.selections.essayId;
+  resetTimerForTask();
   renderAll();
   saveState();
 }
@@ -1690,26 +2225,71 @@ function renderAll() {
   updateCloudSyncUI();
 }
 
+function populatePreferredTaskOptions() {
+  const options = getPreferredTaskOptions(state.profile.preferredExam);
+  if (!options.some((item) => item.value === state.profile.preferredTask)) {
+    state.profile.preferredTask = "all";
+  }
+  els.preferredTask.innerHTML = options
+    .map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`)
+    .join("");
+}
+
+function populatePatternTaskOptions() {
+  const options = getPatternTaskOptions(state.profile.preferredExam);
+  if (!options.some((item) => item.value === state.selections.patternTask)) {
+    state.selections.patternTask = "all";
+  }
+  els.patternTaskFilter.innerHTML = options
+    .map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`)
+    .join("");
+}
+
 function populatePatternCategories() {
-  const categories = ["all", ...new Set(phraseBank.filter((item) => state.selections.patternTask === "all" || item.task === state.selections.patternTask).map((item) => item.category))];
+  const categories = [
+    "all",
+    ...new Set(
+      phraseBank
+        .filter((item) => {
+          const examMatch = getScopedExam(item) === normalizeExam(state.profile.preferredExam);
+          const taskMatch = state.selections.patternTask === "all" || item.task === state.selections.patternTask;
+          return examMatch && taskMatch;
+        })
+        .map((item) => item.category),
+    ),
+  ];
   els.patternCategoryFilter.innerHTML = categories
     .map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category === "all" ? "全部功能" : category)}</option>`)
     .join("");
 }
 
 function populateBlankSelect() {
-  els.blankSelect.innerHTML = blankExercises
+  const pool = getBlankPool();
+  if (!pool.some((item) => item.id === state.selections.blankId)) {
+    state.selections.blankId = pool[0].id;
+  }
+  els.blankSelect.innerHTML = pool
     .map((item) => `<option value="${item.id}">${labelForTask(item.task)} · ${escapeHtml(item.title)}</option>`)
     .join("");
 }
 
 function populateParagraphSelect() {
-  const pool = filterByPreferredTask(paragraphPrompts);
+  const pool = getParagraphPromptPool();
   if (!pool.some((item) => item.id === state.selections.paragraphId)) {
     state.selections.paragraphId = pool[0].id;
   }
   els.paragraphSelect.innerHTML = pool
-    .map((item) => `<option value="${item.id}">${labelForTask(item.task)} · ${escapeHtml(item.title)}</option>`)
+    .map((item) => `<option value="${item.id}">${escapeHtml(labelForExam(getPromptExam(item)))} · ${labelForTask(item.task)} · ${escapeHtml(item.title)}</option>`)
+    .join("");
+}
+
+function populateEssayTaskOptions() {
+  const options = getEssayTaskOptions(state.selections.essayExam);
+  if (!options.some((item) => item.value === state.selections.essayTask)) {
+    state.selections.essayTask = getDefaultEssayTaskForExam(state.selections.essayExam);
+  }
+  els.essayTaskFilter.innerHTML = options
+    .map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`)
     .join("");
 }
 
@@ -1724,7 +2304,7 @@ function populateEssaySelect() {
 }
 
 function populateEssayTopics() {
-  const pool = essayPrompts.filter((item) => item.task === state.selections.essayTask);
+  const pool = essayPrompts.filter((item) => getPromptExam(item) === normalizeExam(state.selections.essayExam) && item.task === state.selections.essayTask);
   const topics = ["all", ...new Set(pool.flatMap((item) => item.topics || []))];
   if (!topics.includes(state.selections.essayTopic)) {
     state.selections.essayTopic = "all";
@@ -1744,17 +2324,13 @@ function renderStats() {
 }
 
 function renderPhraseBank() {
-  const filtered = phraseBank.filter((item) => {
-    const taskMatch = state.selections.patternTask === "all" || item.task === state.selections.patternTask;
-    const categoryMatch = state.selections.patternCategory === "all" || item.category === state.selections.patternCategory;
-    return taskMatch && categoryMatch;
-  });
+  const filtered = getPatternPool();
 
   if (!filtered.length) {
     els.patternGrid.innerHTML = `
       <div class="empty-state">
-        <strong>这组条件下还没有句式</strong>
-        <p>可以把任务类型或功能切回“全部”，先从更宽一点的范围开始挑。</p>
+        <strong>这组条件下还没有现成句式</strong>
+        <p>别慌，这不是页面在摆烂。把任务或功能切回“全部”，先把能直接上手的句子捞出来。</p>
       </div>
     `;
     return;
@@ -1768,6 +2344,7 @@ function renderPhraseBank() {
             <div>
               <h3>${escapeHtml(item.title)}</h3>
               <div class="tag-row">
+                <span class="tag">${escapeHtml(labelForExam(getScopedExam(item)))}</span>
                 <span class="tag">${labelForTask(item.task)}</span>
                 <span class="tag">${escapeHtml(item.category)}</span>
               </div>
@@ -1802,6 +2379,7 @@ function renderBlankExercise() {
   els.blankCard.innerHTML = `
     <div class="exercise-title">
       <h3>${escapeHtml(exercise.title)}</h3>
+      <span class="chip">${escapeHtml(labelForExam(getScopedExam(exercise)))}</span>
       <span class="chip">${labelForTask(exercise.task)}</span>
       <span class="chip">${escapeHtml(exercise.focus)}</span>
     </div>
@@ -1854,35 +2432,128 @@ function revealBlankExercise() {
 function renderParagraphPrompt() {
   const prompt = currentParagraphPrompt();
   els.paragraphPrompt.innerHTML = renderPromptPanel(prompt, "paragraph");
+  if (els.paragraphText) {
+    els.paragraphText.placeholder = getParagraphPlaceholder(prompt);
+  }
   els.paragraphResult.innerHTML = "";
 }
 
 function renderEssayPrompt() {
   const prompt = currentEssayPrompt();
   els.essayPrompt.innerHTML = renderPromptPanel(prompt, "essay");
+  if (els.customPrompt) {
+    els.customPrompt.placeholder = getCustomPromptPlaceholder();
+  }
+  if (els.essayText) {
+    els.essayText.placeholder = getEssayPlaceholder(prompt);
+  }
   els.essayResult.innerHTML = "";
+}
+
+function getMinimumWordsForPrompt(prompt, mode) {
+  const exam = getPromptExam(prompt);
+  const task = prompt.task;
+  if (mode === "paragraph") {
+    if (exam === "kaoyan") {
+      return task === "small" ? 60 : 90;
+    }
+    return task === "task1" ? 50 : 90;
+  }
+  if (typeof prompt.minimumWords === "number") {
+    return prompt.minimumWords;
+  }
+  if (exam === "kaoyan") {
+    return task === "small" ? 100 : 160;
+  }
+  return task === "task1" ? 150 : 250;
+}
+
+function getTargetWordsForPrompt(prompt, mode) {
+  const exam = getPromptExam(prompt);
+  const task = prompt.task;
+  if (mode === "paragraph") {
+    if (exam === "kaoyan") {
+      return task === "small" ? 90 : 120;
+    }
+    return task === "task1" ? 70 : 120;
+  }
+  if (exam === "kaoyan") {
+    return task === "small" ? 120 : 190;
+  }
+  return task === "task1" ? 180 : 280;
+}
+
+function getPromptWordTargetLabel(prompt, mode) {
+  if (prompt.targetWords) {
+    return `${prompt.targetWords[0]}-${prompt.targetWords[1]} 词`;
+  }
+  if (mode !== "essay") {
+    return "";
+  }
+  const exam = getPromptExam(prompt);
+  if (exam === "kaoyan") {
+    return prompt.task === "small" ? "建议 100-140 词" : "建议 170-220 词";
+  }
+  return prompt.task === "task1" ? "建议 170-220 词" : "建议 270-330 词";
+}
+
+function getCriterionLabel(prompt) {
+  const exam = getPromptExam(prompt);
+  if (exam === "kaoyan") {
+    return prompt.task === "small" ? "Task Fulfilment" : "Content & Logic";
+  }
+  return prompt.task === "task1" ? "Task Achievement" : "Task Response";
+}
+
+function getParagraphPlaceholder(prompt) {
+  const exam = getPromptExam(prompt);
+  if (exam === "kaoyan") {
+    return prompt.task === "small"
+      ? "考研小作文先把对象、来意和结尾写稳，别开局就进入抒情宇宙。"
+      : "考研大作文先点出现象，再补评论，不要只做图画或图表播报员。";
+  }
+  return prompt.task === "task1"
+    ? "雅思 Task 1 建议 50-90 词，先总览后细节，别在图表前突然发表人生感悟。"
+    : "雅思 Task 2 建议 90-140 词，先立主论点，再给原因和例子。";
+}
+
+function getEssayPlaceholder(prompt) {
+  const exam = getPromptExam(prompt);
+  if (exam === "kaoyan") {
+    return prompt.task === "small"
+      ? "考研小作文建议至少 100 词。格式先别散架，信息写全，礼貌在线。"
+      : "考研大作文建议至少 160 词。先描述核心现象，再评论它，最后把判断落回现实。";
+  }
+  return prompt.task === "task1"
+    ? "雅思 Task 1 建议至少 150 词。先写 overview，再分组写细节，别把自己写成热评区。"
+    : "雅思 Task 2 建议至少 250 词。写完先看立场有没有站稳，再决定是否请 AI 下场补刀。";
+}
+
+function getCustomPromptPlaceholder() {
+  return state.selections.essayExam === "kaoyan"
+    ? "想练自己的考研真题，就把题目丢进来。系统会自动按小作文 / 大作文的逻辑来批。"
+    : "如果你想练自己手头的剑桥原题，可以把题目粘贴在这里。留空则使用上方内置题库。";
 }
 
 function renderPromptPanel(prompt, mode) {
   const details = prompt.notes || prompt.details || [];
   const requirements = prompt.checklist || prompt.requirements || [];
   const categories = (prompt.categories || []).map((category) => `<span class="tag">${escapeHtml(category)}</span>`).join("");
-  const wordTarget = prompt.targetWords
-    ? `${prompt.targetWords[0]}-${prompt.targetWords[1]} 词`
-    : mode === "essay"
-      ? prompt.task === "task1"
-        ? "建议 170-220 词"
-        : "建议 270-330 词"
-      : "";
+  const wordTarget = getPromptWordTargetLabel(prompt, mode);
 
-  const related = phraseBank.filter((item) => item.task === prompt.task && (prompt.categories || []).includes(item.category)).slice(0, 3);
+  let related = phraseBank
+    .filter((item) => getScopedExam(item) === getPromptExam(prompt) && item.task === prompt.task && (prompt.categories || []).includes(item.category))
+    .slice(0, 3);
+  if (!related.length) {
+    related = phraseBank
+      .filter((item) => getScopedExam(item) === getPromptExam(prompt) && item.task === prompt.task)
+      .slice(0, 3);
+  }
   const baseGuidance = prompt.task === "task2" ? buildGenericTask2Guidance(prompt) : { ideaHints: [], exampleIdeas: [] };
-  const guidance = prompt.task === "task2"
-    ? {
-        ideaHints: prompt.ideaHints || baseGuidance.ideaHints,
-        exampleIdeas: prompt.exampleIdeas || baseGuidance.exampleIdeas,
-      }
-    : baseGuidance;
+  const guidance = {
+    ideaHints: prompt.ideaHints || baseGuidance.ideaHints || [],
+    exampleIdeas: prompt.exampleIdeas || baseGuidance.exampleIdeas || [],
+  };
   const ideaHints = guidance.ideaHints;
   const exampleIdeas = guidance.exampleIdeas;
   const guidanceMarkup = (ideaHints.length || exampleIdeas.length)
@@ -1899,6 +2570,7 @@ function renderPromptPanel(prompt, mode) {
 
   return `
     <div class="tag-row">
+      <span class="tag">${escapeHtml(labelForExam(getPromptExam(prompt)))}</span>
       <span class="tag">${labelForTask(prompt.task)}</span>
       <span class="tag">${escapeHtml(prompt.source)}</span>
       ${prompt.genre ? `<span class="tag">${escapeHtml(prompt.genre)}</span>` : ""}
@@ -1928,7 +2600,7 @@ function evaluateParagraph() {
   renderLocalEvaluation(els.paragraphResult, result, { title: prompt.title, modeLabel: "段落练习" });
   renderCorpus();
   saveState();
-  pushHistory({ kind: "paragraph", task: prompt.task, title: prompt.title, band: result.overallBand, words: result.words, date: nowLabel(), summary: result.summary, source: "local" });
+  pushHistory({ kind: "paragraph", exam: getPromptExam(prompt), task: prompt.task, title: prompt.title, band: result.overallBand, words: result.words, date: nowLabel(), summary: result.summary, source: "local" });
 }
 
 function evaluateEssayLocal() {
@@ -1943,7 +2615,7 @@ function evaluateEssayLocal() {
   renderLocalEvaluation(els.essayResult, result, { title: prompt.title, modeLabel: "本地快评" });
   renderCorpus();
   saveState();
-  pushHistory({ kind: "essay", task: prompt.task, title: prompt.title, band: result.overallBand, words: result.words, date: nowLabel(), summary: result.summary, source: "local" });
+  pushHistory({ kind: "essay", exam: getPromptExam(prompt), task: prompt.task, title: prompt.title, band: result.overallBand, words: result.words, date: nowLabel(), summary: result.summary, source: "local" });
 }
 
 function setEssayAiBusy(isBusy, label = "AI 精批") {
@@ -1981,6 +2653,7 @@ function applyAiEvaluationResult(prompt, localReview, payload) {
   updateCorpusFromReview(prompt, localReview, payload.review || null);
   pushHistory({
     kind: "essay",
+    exam: getPromptExam(prompt),
     task: prompt.task,
     title: `${prompt.title} · AI`,
     band: Number(payload.review?.overall_band || localReview.overallBand),
@@ -1992,6 +2665,7 @@ function applyAiEvaluationResult(prompt, localReview, payload) {
   state.aiArchive.unshift({
     timestamp: Date.now(),
     title: prompt.title,
+    exam: getPromptExam(prompt),
     task: prompt.task,
     band: Number(payload.review?.overall_band || 0),
     keyIssue: payload.review?.key_issues?.[0] || payload.review?.summary || "",
@@ -2055,7 +2729,7 @@ async function evaluateEssayAi() {
     els.essayResult.innerHTML = `
       <div class="feedback feedback--warning">
         <strong>当前选择的 AI 后端还没有连接上</strong>
-        <p>请先在根目录启动 server.py，并设置 ${backendStatus.label} 对应的 ${AI_BACKEND_OPTIONS[selectedBackend].keyName}。${fallbackText}</p>
+        <p>如果你在本地使用，请先启动根目录的 server.py；如果你在在线版使用，请检查当前项目的 AI 环境变量是否已经配好。${fallbackText}</p>
       </div>
     `;
     return;
@@ -2135,8 +2809,9 @@ async function evaluateEssayAi() {
 
 function renderLocalEvaluation(container, result, meta) {
   const targetGap = Math.max(0, Number(state.profile.targetBand) - result.overallBand);
+  const criterionLabel = getCriterionLabel(result.promptMeta || { exam: result.exam, task: result.task });
   const metricCards = [
-    { key: "taskResponse", label: result.task === "task1" ? "Task Achievement" : "Task Response", value: result.breakdown.taskResponse },
+    { key: "taskResponse", label: criterionLabel, value: result.breakdown.taskResponse },
     { key: "coherence", label: "Coherence & Cohesion", value: result.breakdown.coherence },
     { key: "lexical", label: "Lexical Resource", value: result.breakdown.lexical },
     { key: "grammar", label: "Grammar Range & Accuracy", value: result.breakdown.grammar },
@@ -2163,6 +2838,8 @@ function renderLocalEvaluation(container, result, meta) {
     <h3>${escapeHtml(meta.modeLabel)}</h3>
     <p><strong>${escapeHtml(meta.title)}</strong> 的估算总分为 <strong>${result.overallBand.toFixed(1)}</strong>。${escapeHtml(result.summary)}</p>
     <div class="result-stats">
+      <span class="chip">${escapeHtml(labelForExam(result.exam))}</span>
+      <span class="chip">${labelForTask(result.task)}</span>
       <span class="chip">${result.words} 词</span>
       <span class="chip">${result.sentences} 句</span>
       <span class="chip">${result.paragraphs} 段</span>
@@ -2218,12 +2895,14 @@ function renderLocalEvaluation(container, result, meta) {
 
 function renderAiEvaluation(prompt, payload) {
   const review = payload.review || {};
-  const criterionLabel = prompt.task === "task1" ? "Task Achievement" : "Task Response";
+  const criterionLabel = getCriterionLabel(prompt);
   const backendLabel = payload.provider_label || getSelectedAiBackendStatus().label;
   return `
     <div class="analysis-shell">
       <div class="tag-row">
         <span class="tag">AI 精批</span>
+        <span class="tag">${escapeHtml(labelForExam(getPromptExam(prompt)))}</span>
+        <span class="tag">${labelForTask(prompt.task)}</span>
         <span class="tag">${escapeHtml(backendLabel)}</span>
         <span class="tag">模型 ${escapeHtml(payload.review_model || aiState.reviewModel || "")}</span>
         <span class="tag">预估 ${Number(review.overall_band || 0).toFixed(1)}</span>
@@ -2343,6 +3022,7 @@ function dedupeIssues(items) {
 }
 
 function buildLanguageReview(text, prompt, mode, sentences, fragmentCount) {
+  const promptMeta = normalizePromptDefinition(prompt);
   const grammarIssues = collectRuleIssues(text, GRAMMAR_RULES, 4);
   const lexicalIssues = collectRuleIssues(text, LEXICAL_RULES, 4);
   const idiomIssues = collectRuleIssues(text, IDIOM_RULES, 4);
@@ -2371,7 +3051,7 @@ function buildLanguageReview(text, prompt, mode, sentences, fragmentCount) {
       label: "正式度",
       evidence: contractions.slice(0, 2).join(", "),
       suggestion: "改成完整拼写，例如 do not / cannot / it is",
-      reason: "雅思写作通常更适合避免缩写。",
+      reason: "正式写作里通常更适合避免缩写。",
     });
   }
 
@@ -2386,7 +3066,7 @@ function buildLanguageReview(text, prompt, mode, sentences, fragmentCount) {
     });
   }
 
-  if (prompt.task === "task1" && /\bi think\b/i.test(text)) {
+  if (getPromptExam(promptMeta) === "ielts" && promptMeta.task === "task1" && /\bi think\b/i.test(text)) {
     idiomIssues.push({
       label: "Task 1 客观性",
       evidence: "I think",
@@ -2395,12 +3075,30 @@ function buildLanguageReview(text, prompt, mode, sentences, fragmentCount) {
     });
   }
 
-  if (mode === "essay" && prompt.task === "task2" && !/\b(?:for example|for instance|a clear example of this)\b/i.test(text)) {
+  if (mode === "essay" && getPromptExam(promptMeta) === "ielts" && promptMeta.task === "task2" && !/\b(?:for example|for instance|a clear example of this)\b/i.test(text)) {
     idiomIssues.push({
       label: "论证习惯",
       evidence: "例子支撑偏少",
       suggestion: "至少加入一个更具体的 example 或 scenario",
       reason: "Task 2 只有抽象观点时，论证会显得偏空。",
+    });
+  }
+
+  if (mode === "essay" && getPromptExam(promptMeta) === "kaoyan" && promptMeta.task === "small" && !/^[ \t]*(dear|to whom it may concern|hello)\b/im.test(text)) {
+    idiomIssues.push({
+      label: "格式感",
+      evidence: "缺少明显称呼",
+      suggestion: "开头补一个合适的称呼，如 Dear Professor Smith / Dear Sir or Madam",
+      reason: "考研小作文首先得像一封真的邮件或书信。",
+    });
+  }
+
+  if (mode === "essay" && getPromptExam(promptMeta) === "kaoyan" && promptMeta.task === "small" && !/(?:best regards|yours sincerely|sincerely yours|yours truly|sincerely|best wishes|yours faithfully)\s*,?(?:\s*\n|\s*$)/i.test(text)) {
+    idiomIssues.push({
+      label: "收尾格式",
+      evidence: "结尾没有礼貌收束",
+      suggestion: "结尾补一个 sign-off，如 Best regards / Yours sincerely",
+      reason: "应用文如果没收尾，会像消息发到一半突然断网。",
     });
   }
 
@@ -2412,12 +3110,14 @@ function buildLanguageReview(text, prompt, mode, sentences, fragmentCount) {
 }
 
 function buildPolishedVersion(text, prompt) {
+  const promptMeta = normalizePromptDefinition(prompt);
   let polished = text.trim();
   POLISHING_REPLACEMENTS.forEach(([pattern, replacement]) => {
     polished = polished.replace(pattern, replacement);
   });
 
-  if (prompt.task === "task2") {
+  if ((getPromptExam(promptMeta) === "ielts" && promptMeta.task === "task2")
+    || (getPromptExam(promptMeta) === "kaoyan" && promptMeta.task === "large")) {
     polished = polished.replace(/\bi think\b/gi, "I believe");
   }
 
@@ -2538,10 +3238,16 @@ function extractChangedSentences(originalText, revisedText) {
 }
 
 function buildStudyPack(prompt, languageReview, polishedVersion, originalText) {
-  const recommendedPatterns = phraseBank
-    .filter((item) => item.task === prompt.task && (prompt.categories || []).includes(item.category))
+  let recommendedPatterns = phraseBank
+    .filter((item) => getScopedExam(item) === getPromptExam(prompt) && item.task === prompt.task && (prompt.categories || []).includes(item.category))
     .slice(0, 4)
     .map((item) => item.structure);
+  if (!recommendedPatterns.length) {
+    recommendedPatterns = phraseBank
+      .filter((item) => getScopedExam(item) === getPromptExam(prompt) && item.task === prompt.task)
+      .slice(0, 4)
+      .map((item) => item.structure);
+  }
 
   const lexicalUpgrades = [...languageReview.lexicalIssues, ...languageReview.idiomIssues]
     .slice(0, 4)
@@ -2657,6 +3363,7 @@ function renderIssueItems(items) {
 }
 
 function evaluateWriting(text, prompt, mode) {
+  const promptMeta = normalizePromptDefinition(prompt);
   const normalized = normalizeEssayText(text);
   const words = countEssayWords(text);
   const sentences = splitEssaySentences(text);
@@ -2671,12 +3378,29 @@ function evaluateWriting(text, prompt, mode) {
   const topRepeatRatio = getTopRepeatRatio(text);
   const hasOverview = includesEssayPhrase(normalized, ["overall", "it is clear that", "in general"]);
   const hasOpinion = includesEssayPhrase(normalized, ["i believe", "i think", "in my view", "from my perspective", "i would argue"]);
+  const hasCommentary = includesEssayPhrase(normalized, [
+    "this phenomenon",
+    "this trend",
+    "the chart suggests",
+    "the chart reflects",
+    "the picture reveals",
+    "this picture is",
+    "in my view",
+    "i believe",
+  ]);
   const hasConclusion = includesEssayPhrase(normalized, ["in conclusion", "to conclude", "to sum up"]);
+  const hasGreeting = /^[ \t]*(dear|to whom it may concern|hello)\b/im.test(text);
+  const hasSignoff = /(?:best regards|yours sincerely|sincerely yours|yours truly|sincerely|best wishes|yours faithfully)\s*,?(?:\s*\n|\s*$)/i.test(text);
   const punctuationVariety = [",", ";", ":"].reduce((count, mark) => count + (text.includes(mark) ? 1 : 0), 0);
   const fragmentCount = sentences.filter((sentence) => countEssayWords(sentence) < 4).length;
-  const task = prompt.task;
-  const minimumWords = mode === "paragraph" ? (task === "task1" ? 50 : 90) : prompt.minimumWords;
-  const targetWords = mode === "paragraph" ? (task === "task1" ? 70 : 120) : (task === "task1" ? 180 : 280);
+  const task = promptMeta.task;
+  const exam = getPromptExam(promptMeta);
+  const minimumWords = getMinimumWordsForPrompt(promptMeta, mode);
+  const targetWords = getTargetWordsForPrompt(promptMeta, mode);
+  const isIeltsTask1 = exam === "ielts" && task === "task1";
+  const isIeltsTask2 = exam === "ielts" && task === "task2";
+  const isKaoyanSmall = exam === "kaoyan" && task === "small";
+  const isKaoyanLarge = exam === "kaoyan" && task === "large";
 
   let taskResponse = 5;
   if (words >= targetWords) {
@@ -2697,7 +3421,7 @@ function evaluateWriting(text, prompt, mode) {
     taskResponse -= 0.6;
   }
 
-  if (task === "task1") {
+  if (isIeltsTask1) {
     if (hasOverview) {
       taskResponse += 0.6;
     } else if (mode === "essay") {
@@ -2706,7 +3430,7 @@ function evaluateWriting(text, prompt, mode) {
     if (hasOpinion) {
       taskResponse -= 0.8;
     }
-  } else {
+  } else if (isIeltsTask2) {
     if (hasOpinion) {
       taskResponse += 0.5;
     } else {
@@ -2717,6 +3441,26 @@ function evaluateWriting(text, prompt, mode) {
     } else if (mode === "essay") {
       taskResponse -= 0.3;
     }
+  } else if (isKaoyanSmall) {
+    if (hasGreeting) {
+      taskResponse += 0.4;
+    } else if (mode === "essay") {
+      taskResponse -= 0.5;
+    }
+    if (hasSignoff) {
+      taskResponse += 0.4;
+    } else if (mode === "essay") {
+      taskResponse -= 0.5;
+    }
+  } else if (isKaoyanLarge) {
+    if (hasCommentary) {
+      taskResponse += 0.5;
+    } else {
+      taskResponse -= 0.4;
+    }
+    if (mode === "essay" && hasConclusion) {
+      taskResponse += 0.3;
+    }
   }
   if (sentences.length < (mode === "essay" ? 8 : 4)) {
     taskResponse -= 0.4;
@@ -2725,7 +3469,7 @@ function evaluateWriting(text, prompt, mode) {
 
   let coherence = 5;
   if (mode === "essay") {
-    const ideal = task === "task1" ? [3, 4] : [4, 5];
+    const ideal = isIeltsTask1 ? [3, 4] : isIeltsTask2 ? [4, 5] : isKaoyanSmall ? [3, 4] : [3, 4];
     if (paragraphs.length >= ideal[0] && paragraphs.length <= ideal[1]) {
       coherence += 1;
     } else if (paragraphs.length === ideal[0] - 1) {
@@ -2799,7 +3543,15 @@ function evaluateWriting(text, prompt, mode) {
   const improvementActions = [];
 
   if (taskResponse >= 6.5) {
-    strengths.push(task === "task1" ? "题目回应比较到位，已经开始抓总趋势和重点信息。" : "题目回应较完整，立场和主线基本清楚。");
+    if (isIeltsTask1) {
+      strengths.push("题目回应比较到位，已经开始抓总趋势和重点信息。");
+    } else if (isKaoyanSmall) {
+      strengths.push("写作目的比较清楚，应用文的语气和任务意识已经出来了。");
+    } else if (isKaoyanLarge) {
+      strengths.push("大作文主线比较清楚，已经开始把图表/图画和观点拉到一起。");
+    } else {
+      strengths.push("题目回应较完整，立场和主线基本清楚。");
+    }
   }
   if (coherence >= 6.5) strengths.push("结构比较清楚，段落推进和连接词使用已经有训练痕迹。");
   if (lexical >= 6.5) strengths.push("词汇不只停留在基础表达，已经有一定学术写作感。");
@@ -2809,17 +3561,29 @@ function evaluateWriting(text, prompt, mode) {
     keyIssues.push(`当前只有 ${words} 词，字数还没达标。`);
     improvementActions.push(`先把字数补到至少 ${minimumWords} 词以上，再评分会更接近真实水平。`);
   }
-  if (task === "task1" && !hasOverview) {
+  if (isIeltsTask1 && !hasOverview) {
     keyIssues.push("Task 1 缺少清晰的 overview。");
     improvementActions.push("用 Overall / It is clear that 先概括最大趋势，再去分组写细节。");
   }
-  if (task === "task2" && !hasOpinion) {
+  if (isIeltsTask2 && !hasOpinion) {
     keyIssues.push("Task 2 立场还不够显眼。");
     improvementActions.push("把 In my view / I would argue that 放进引言或第一主体段。");
   }
-  if (mode === "essay" && task === "task2" && !hasConclusion) {
+  if (mode === "essay" && isIeltsTask2 && !hasConclusion) {
     keyIssues.push("整篇作文还缺一个真正收束的结尾。");
     improvementActions.push("用 In conclusion 重申观点，不要在结尾开新论点。");
+  }
+  if (mode === "essay" && isKaoyanSmall && !hasGreeting) {
+    keyIssues.push("小作文开头还缺明显的称呼，格式感不够。");
+    improvementActions.push("应用文开头先把对象叫出来，比如 Dear Sir or Madam / Dear Professor Li。");
+  }
+  if (mode === "essay" && isKaoyanSmall && !hasSignoff) {
+    keyIssues.push("小作文结尾还没收住，落款和结束语比较松。");
+    improvementActions.push("结尾补一个礼貌收束，比如 Best regards / Yours sincerely。");
+  }
+  if (isKaoyanLarge && !hasCommentary) {
+    keyIssues.push("大作文还没把图表或图画往一个明确观点上拽。");
+    improvementActions.push("先用一句话点出你看到的核心现象，再写 why it matters。");
   }
   if (connectorHits.length < (mode === "essay" ? 4 : 2)) {
     keyIssues.push("连接词偏少，句子之间的推进感还不够明显。");
@@ -2845,7 +3609,9 @@ function evaluateWriting(text, prompt, mode) {
   const studyPack = buildStudyPack(prompt, languageReview, polishedVersion, text);
 
   return {
+    exam,
     task,
+    promptMeta,
     originalText: text,
     words,
     sentences: sentences.length,
@@ -2900,7 +3666,7 @@ function renderHistory() {
   const history = [...state.history];
   if (state.aiArchive.length) {
     state.aiArchive.slice(0, 3).forEach((item) => {
-      history.unshift({ kind: "essay", task: item.task, title: `${item.title} · AI 档案`, band: item.band, words: "-", date: formatDate(item.timestamp), summary: item.keyIssue, source: "ai" });
+      history.unshift({ kind: "essay", exam: item.exam || "ielts", task: item.task, title: `${item.title} · AI 档案`, band: item.band, words: "-", date: formatDate(item.timestamp), summary: item.keyIssue, source: "ai" });
     });
   }
 
@@ -2917,6 +3683,7 @@ function renderHistory() {
       </div>
       <div class="history-tags">
         <span class="tag">${item.kind === "essay" ? "整篇" : "段落"}</span>
+        <span class="tag">${escapeHtml(labelForExam(item.exam || "ielts"))}</span>
         <span class="tag">${labelForTask(item.task)}</span>
         <span class="tag">${item.source === "ai" ? "AI" : "本地"}</span>
       </div>
@@ -2935,15 +3702,24 @@ function pushHistory(entry) {
 }
 
 function currentBlankExercise() {
-  return blankExercises.find((item) => item.id === state.selections.blankId) || blankExercises[0];
+  const pool = getBlankPool();
+  return pool.find((item) => item.id === state.selections.blankId) || pool[0] || blankExercises[0];
 }
 
 function currentParagraphPrompt() {
-  return paragraphPrompts.find((item) => item.id === state.selections.paragraphId) || paragraphPrompts[0];
+  return normalizePromptDefinition(
+    getParagraphPromptPool().find((item) => item.id === state.selections.paragraphId)
+      || getParagraphPromptPool()[0]
+      || paragraphPrompts[0],
+  );
 }
 
 function currentEssayPrompt() {
-  return essayPrompts.find((item) => item.id === state.selections.essayId) || essayPrompts[0];
+  return normalizePromptDefinition(
+    getEssayPromptPool().find((item) => item.id === state.selections.essayId)
+      || getEssayPromptPool()[0]
+      || essayPrompts[0],
+  );
 }
 
 function activeEssayPrompt() {
@@ -2952,13 +3728,19 @@ function activeEssayPrompt() {
   if (!customPrompt) {
     return basePrompt;
   }
-  const minimumWords = state.selections.essayTask === "task1" ? 150 : 250;
-  const requirements = state.selections.essayTask === "task1"
-    ? ["至少 150 词", "写出 overview", "优先概括主趋势和关键对比"]
-    : ["至少 250 词", "立场要稳定清楚", "每段围绕一个主论点展开"];
+  const normalizedExam = normalizeExam(state.selections.essayExam);
+  const minimumWords = getMinimumWordsForPrompt({ exam: normalizedExam, task: state.selections.essayTask }, "essay");
+  const requirements = normalizedExam === "kaoyan"
+    ? state.selections.essayTask === "small"
+      ? ["至少 100 词", "格式别散架", "把写作目的和语气交代清楚"]
+      : ["至少 160 词", "先点题再展开", "别让观点在半路散掉"]
+    : state.selections.essayTask === "task1"
+      ? ["至少 150 词", "写出 overview", "优先概括主趋势和关键对比"]
+      : ["至少 250 词", "立场要稳定清楚", "每段围绕一个主论点展开"];
   return {
     title: "自定义题目",
     source: "用户粘贴题目",
+    exam: normalizedExam,
     task: state.selections.essayTask,
     genre: "custom prompt",
     prompt: customPrompt,
@@ -2972,19 +3754,22 @@ function activeEssayPrompt() {
 }
 
 function filterByPreferredTask(collection) {
-  return state.profile.preferredTask === "all" ? collection : collection.filter((item) => item.task === state.profile.preferredTask);
+  const preferredExam = normalizeExam(state.profile.preferredExam);
+  return collection.filter((item) => {
+    if (getPromptExam(item) !== preferredExam) {
+      return false;
+    }
+    return state.profile.preferredTask === "all" ? true : item.task === state.profile.preferredTask;
+  });
 }
 
 function getEssayPromptPool() {
   return essayPrompts.filter((item) => {
+    const examMatch = getPromptExam(item) === normalizeExam(state.selections.essayExam);
     const taskMatch = item.task === state.selections.essayTask;
     const topicMatch = state.selections.essayTopic === "all" || (item.topics || []).includes(state.selections.essayTopic);
-    return taskMatch && topicMatch;
+    return examMatch && taskMatch && topicMatch;
   });
-}
-
-function labelForTask(task) {
-  return task === "task1" ? "Task 1" : "Task 2";
 }
 
 function createDefaultBackendStatus() {
@@ -3120,7 +3905,7 @@ function randomFrom(list) {
 
 function resetTimerForTask() {
   stopTimer(false);
-  state.timer.remaining = state.selections.essayTask === "task1" ? 20 * 60 : 40 * 60;
+  state.timer.remaining = getTimerSecondsForCurrentEssayTask();
   renderTimer();
   saveState();
 }
@@ -3148,7 +3933,7 @@ function stopTimer(keepRemaining) {
   }
   state.timer.running = false;
   if (!keepRemaining) {
-    state.timer.remaining = state.selections.essayTask === "task1" ? 20 * 60 : 40 * 60;
+    state.timer.remaining = getTimerSecondsForCurrentEssayTask();
   }
   renderTimer();
 }
@@ -3212,9 +3997,9 @@ async function checkAiStatus() {
 function updateAiStatusUI() {
   if (!aiState.checked) {
     els.aiStatusChip.textContent = "AI 状态检测中";
-    els.aiModelMeta.textContent = "正在尝试连接本地代理服务";
+    els.aiModelMeta.textContent = "AI 老师正在找工位，请稍等几秒";
     els.aiHeroStatus.textContent = "检测中";
-    els.aiSideMeta.textContent = "如果通过本地代理连接 OpenAI 兼容接口（GemAI / AIHubMix）或 OpenRouter，就能在整篇写作区拿到句子升级、词汇替换和重写提纲。";
+    els.aiSideMeta.textContent = "一旦连上，它就会开始挑语法、抓词汇、顺手把不太像英语的表达拎出来公开处刑。";
     return;
   }
 
@@ -3225,7 +4010,7 @@ function updateAiStatusUI() {
     els.aiStatusChip.textContent = `${selectedBackend.label} 已连接`;
     els.aiModelMeta.textContent = `当前精批模型：${selectedBackend.writingReviewModel || selectedBackend.reviewModel || "未返回模型名"}`;
     els.aiHeroStatus.textContent = selectedBackend.label;
-    els.aiSideMeta.textContent = `写作区现在可以在 OpenAI 兼容接口（GemAI / AIHubMix）和 OpenRouter 之间切换；当前选中 ${selectedBackend.label}。`;
+    els.aiSideMeta.textContent = `电子阅卷老师已上线，当前走 ${selectedBackend.label}。它会继续负责句子升级、词汇替换和结构复盘这些脏活累活。`;
     return;
   }
 
@@ -3233,14 +4018,14 @@ function updateAiStatusUI() {
     els.aiStatusChip.textContent = `${selectedBackend.label} 未连接`;
     els.aiModelMeta.textContent = `当前请选择已连接后端，或补上 ${AI_BACKEND_OPTIONS[getSelectedAiBackend()].keyName}`;
     els.aiHeroStatus.textContent = "部分可用";
-    els.aiSideMeta.textContent = `目前已连接：${availableLabels.join(" / ")}。如果你想切回当前后端，请补充对应 API Key。`;
+    els.aiSideMeta.textContent = `目前能用的是 ${availableLabels.join(" / ")}。现在不是完全失联，只是这位老师今天没来上班。`;
     return;
   }
 
   els.aiStatusChip.textContent = "AI 未连接";
   els.aiModelMeta.textContent = "请用根目录 server.py 启动本地代理，并设置 OPENAI_API_KEY（也可填 AIHubMix Key）或 OPENROUTER_API_KEY";
   els.aiHeroStatus.textContent = "未连接";
-  els.aiSideMeta.textContent = "当前只能使用本地快评；如果你想用 AI 精批，请在根目录启动 server.py。";
+  els.aiSideMeta.textContent = "当前只能先靠本地快评撑场面；想让 AI 下场挑刺，就把后端接起来。";
 }
 
 function nowLabel() {

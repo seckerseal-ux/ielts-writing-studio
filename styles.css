@@ -127,7 +127,7 @@ h3 {
 
 h1 {
   font-size: clamp(2.2rem, 4.5vw, 4.1rem);
-  max-width: 12ch;
+  max-width: 15ch;
 }
 
 h2 {
@@ -293,10 +293,21 @@ input {
   margin-bottom: 18px;
 }
 
+.section-head__tools {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
 .section-head__hint {
   max-width: 34ch;
   margin: 0;
   text-align: right;
+}
+
+.panel > .section-head__hint {
+  display: block;
+  margin: -6px 0 18px auto;
 }
 
 .rubric-grid,
@@ -941,8 +952,16 @@ select {
     flex-direction: column;
   }
 
+  .section-head__tools {
+    justify-items: start;
+  }
+
   .section-head__hint {
     text-align: left;
+  }
+
+  .panel > .section-head__hint {
+    margin: 0 0 18px;
   }
 }
 

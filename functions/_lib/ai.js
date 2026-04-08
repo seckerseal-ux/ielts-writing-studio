@@ -98,16 +98,20 @@ const WRITING_REVIEW_SCHEMA = {
 };
 
 const WRITING_REVIEW_INSTRUCTIONS = `
-You are a strict but helpful IELTS Academic Writing examiner and coach.
+You are a strict but helpful English writing examiner and coach.
+You support both IELTS Academic Writing and Chinese postgraduate entrance exam English writing.
 Return feedback in Simplified Chinese, but keep quoted essay snippets and improved English phrases in English.
-Estimate IELTS Writing sub-scores in 0.5 increments from 0 to 9.
-For Task 1, treat the first criterion as Task Achievement and be strict about overview, data selection, and avoiding personal opinion.
-For Task 2, treat the first criterion as Task Response and be strict about fully answering the question, maintaining a clear position, and supporting ideas.
+Estimate sub-scores in 0.5 increments from 0 to 9 for consistency.
+When exam=ielts, use IELTS Academic Writing expectations.
+For IELTS Task 1, treat the first criterion as Task Achievement and be strict about overview, data selection, and avoiding personal opinion.
+For IELTS Task 2, treat the first criterion as Task Response and be strict about fully answering the question, maintaining a clear position, and supporting ideas.
+When exam=kaoyan and task=small, focus on task fulfilment, register, format, clarity, completeness, and whether the piece reads like a real English email/notice/letter.
+When exam=kaoyan and task=large, focus on content development, picture/chart interpretation, commentary depth, logic, and natural English expression.
 Do not invent mistakes that are not visible in the essay.
 If the essay is clearly under length, state that directly.
 Keep feedback concise but actionable.
 Sentence upgrades must be plausible rewrites of the candidate's own sentences, not completely new content.
-Vocabulary upgrades should focus on replacing repetitive or weak expressions with more natural IELTS-style phrasing.
+Vocabulary upgrades should focus on replacing repetitive or weak expressions with more natural exam-appropriate phrasing.
 Paragraph plans should help the candidate rewrite this exact essay more effectively on the next attempt.
 `.trim();
 
@@ -393,9 +397,81 @@ function clampWritingReviewPayload(payload) {
   return review;
 }
 
+function getExamReviewProfile(promptPayload) {
+  const exam = String(promptPayload?.exam || "ielts").trim().toLowerCase() === "kaoyan" ? "kaoyan" : "ielts";
+  const task = String(promptPayload?.task || (exam === "kaoyan" ? "large" : "task2")).trim().toLowerCase();
+
+  if (exam === "kaoyan") {
+    if (task === "small") {
+      return {
+        exam,
+        task,
+        examLabel: "考研英语写作",
+        taskLabel: "小作文",
+        firstCriterion: "Task Fulfilment",
+        focuses: [
+          "是否完成题目要求和写作目的",
+          "格式、称呼、结尾和语气是否合适",
+          "信息是否完整、顺序是否清楚",
+          "表达是否自然、礼貌且像真实英文应用文",
+        ],
+        phraseLine: "给出适合这道题继续套用的考研英语小作文表达。",
+      };
+    }
+
+    return {
+      exam,
+      task,
+      examLabel: "考研英语写作",
+      taskLabel: "大作文",
+      firstCriterion: "Content & Logic",
+      focuses: [
+        "是否抓住图表或图画最核心的信息",
+        "是否有清楚评论，而不是只做描述",
+        "观点推进是否自然，逻辑是否成线",
+        "表达是否自然、书面、符合英文习惯",
+      ],
+      phraseLine: "给出适合这道题继续套用的考研英语大作文表达。",
+    };
+  }
+
+  if (task === "task1") {
+    return {
+      exam,
+      task,
+      examLabel: "IELTS Academic Writing",
+      taskLabel: "Task 1",
+      firstCriterion: "Task Achievement",
+      focuses: [
+        "是否写出 overview",
+        "是否抓住主要趋势和关键比较",
+        "是否避免个人观点和无关信息",
+        "语言是否客观、数据选择是否有效",
+      ],
+      phraseLine: "给出适合这道题继续套用的 IELTS Task 1 表达。",
+    };
+  }
+
+  return {
+    exam,
+    task,
+    examLabel: "IELTS Academic Writing",
+    taskLabel: "Task 2",
+    firstCriterion: "Task Response",
+    focuses: [
+      "是否真正回答题目",
+      "立场是否清楚稳定",
+      "论证是否展开，并有必要的例子或解释",
+      "表达是否自然、书面且符合英文习惯",
+    ],
+    phraseLine: "给出适合这道题继续套用的 IELTS Task 2 表达。",
+  };
+}
+
 function buildReviewPrompt(promptPayload, essayText, localMetrics, targetBand) {
+  const profile = getExamReviewProfile(promptPayload);
   return `
-请按 IELTS Academic Writing 的四项维度做评估。
+请按 ${profile.examLabel} 的 ${profile.taskLabel} 标准做评估。
 
 题目定义:
 ${JSON.stringify(promptPayload || {}, null, 2)}
@@ -410,10 +486,13 @@ ${JSON.stringify(localMetrics || {}, null, 2)}
 ${targetBand || "未提供"}
 
 请输出结构化结果，重点关注：
-1. Task Achievement / Task Response
+1. ${profile.firstCriterion}
 2. Coherence and Cohesion
 3. Lexical Resource
 4. Grammatical Range and Accuracy
+
+请特别检查：
+${profile.focuses.map((item, index) => `${index + 1}. ${item}`).join("\n")}
 
 反馈应明确指出这篇作文最主要的问题、最值得保留的优点，以及下一轮改写时最该优先修改的地方。
 另外请额外返回：
@@ -421,7 +500,7 @@ ${targetBand || "未提供"}
 2. 2-4 个 sentence_upgrades，只改写考生原文里真实存在的句子。
 3. 2-4 个 vocabulary_upgrades，聚焦重复、口语化或偏弱的表达。
 4. 3-5 条 paragraph_plan，告诉考生如何更好地重写这篇作文的结构。
-5. 3-5 个 useful_phrases，给出适合这道题继续套用的 IELTS 写作表达。
+5. 3-5 个 useful_phrases，${profile.phraseLine}
 `.trim();
 }
 
