@@ -1604,10 +1604,22 @@ const AI_BACKEND_OPTIONS = {
   openrouter: { label: "OpenRouter（免费）", keyName: "OPENROUTER_API_KEY" },
   openai: { label: "OpenAI 兼容（GemAI / AIHubMix）", keyName: "OPENAI_API_KEY" },
 };
+const MAX_CUSTOM_PROMPT_IMAGE_EDGE = 1400;
+const MAX_CUSTOM_PROMPT_IMAGE_DATA_URL_LENGTH = 950000;
 const RUNTIME_CONFIG = normalizeRuntimeConfig(window.__IELTS_WRITING_STUDIO_CONFIG__ || {});
 const WRITING_EXAMS = {
   ielts: {
     label: "雅思写作",
+    currentLevelLabel: "当前写作水平",
+    targetLevelLabel: "目标分数",
+    levelOptions: [
+      { value: "5.5", label: "5.5" },
+      { value: "6.0", label: "6.0" },
+      { value: "6.5", label: "6.5" },
+      { value: "7.0", label: "7.0" },
+      { value: "7.5", label: "7.5" },
+      { value: "8.0", label: "8.0" },
+    ],
     preferredTasks: [
       { value: "all", label: "大小作文一起练" },
       { value: "task1", label: "先攻 Task 1" },
@@ -1624,6 +1636,15 @@ const WRITING_EXAMS = {
   },
   kaoyan: {
     label: "考研英语写作",
+    currentLevelLabel: "当前水平档位",
+    targetLevelLabel: "目标水平档位",
+    levelOptions: [
+      { value: "5.0", label: "基础档" },
+      { value: "6.0", label: "可用档" },
+      { value: "6.8", label: "中档" },
+      { value: "7.6", label: "稳妥档" },
+      { value: "8.4", label: "冲刺档" },
+    ],
     preferredTasks: [
       { value: "all", label: "大小作文一起练" },
       { value: "small", label: "先攻小作文" },
@@ -1710,6 +1731,13 @@ const accountSyncState = {
   statusMessage: "未登录",
   statusDetail: "登录和阅读复盘同一个同步账号后，这里的写作记录、草稿和语料库也会自动备份到云端。",
 };
+const customPromptImageState = {
+  dataUrl: "",
+  name: "",
+  mimeType: "",
+  width: 0,
+  height: 0,
+};
 
 const els = {
   statTotal: document.querySelector("#stat-total"),
@@ -1721,6 +1749,8 @@ const els = {
   patternCategoryFilter: document.querySelector("#pattern-category-filter"),
   patternGrid: document.querySelector("#pattern-grid"),
   preferredExam: document.querySelector("#preferred-exam"),
+  currentLevelLabel: document.querySelector("#current-level-label"),
+  targetLevelLabel: document.querySelector("#target-level-label"),
   currentBand: document.querySelector("#current-band"),
   targetBand: document.querySelector("#target-band"),
   preferredTask: document.querySelector("#preferred-task"),
@@ -1742,6 +1772,9 @@ const els = {
   essaySelect: document.querySelector("#essay-select"),
   essayPrompt: document.querySelector("#essay-prompt"),
   customPrompt: document.querySelector("#custom-prompt"),
+  customPromptImage: document.querySelector("#custom-prompt-image"),
+  customPromptImageClear: document.querySelector("#custom-prompt-image-clear"),
+  customPromptImagePreview: document.querySelector("#custom-prompt-image-preview"),
   essayText: document.querySelector("#essay-text"),
   essayWordCount: document.querySelector("#essay-word-count"),
   essayEvaluate: document.querySelector("#essay-evaluate"),
@@ -1884,6 +1917,10 @@ function getPatternTaskOptions(exam) {
   return getExamConfig(exam).preferredTasks;
 }
 
+function getLevelOptions(exam) {
+  return getExamConfig(exam).levelOptions || [];
+}
+
 function getTimerSecondsForCurrentEssayTask() {
   const config = getExamConfig(state.selections.essayExam);
   return config.timerSeconds[state.selections.essayTask] || 25 * 60;
@@ -1959,6 +1996,7 @@ function hydrateControls() {
   if (els.preferredExam) {
     els.preferredExam.value = state.profile.preferredExam;
   }
+  populateLevelOptions();
   populatePreferredTaskOptions();
   els.currentBand.value = state.profile.currentBand;
   els.targetBand.value = state.profile.targetBand;
@@ -1989,6 +2027,7 @@ function hydrateControls() {
   if (els.essayAiBackend) {
     els.essayAiBackend.value = normalizeAiBackend(state.selections.aiBackend);
   }
+  renderCustomPromptImagePreview();
 }
 
 function bindEvents() {
@@ -2109,6 +2148,8 @@ function bindEvents() {
     state.drafts.customPrompt = els.customPrompt.value;
     saveState();
   });
+  els.customPromptImage?.addEventListener("change", handleCustomPromptImageChange);
+  els.customPromptImageClear?.addEventListener("click", clearCustomPromptImage);
 
   els.essayText.addEventListener("input", () => {
     state.drafts.essayText = els.essayText.value;
@@ -2185,7 +2226,10 @@ function handlePreferredExamUpdate() {
   state.selections.essayExam = state.profile.preferredExam;
   state.selections.essayTask = getDefaultEssayTaskForExam(state.profile.preferredExam);
   state.selections.essayTopic = "all";
+  populateLevelOptions();
   populatePreferredTaskOptions();
+  els.currentBand.value = state.profile.currentBand;
+  els.targetBand.value = state.profile.targetBand;
   els.preferredTask.value = state.profile.preferredTask;
   populatePatternTaskOptions();
   els.patternTaskFilter.value = state.selections.patternTask;
@@ -2237,6 +2281,28 @@ function populatePreferredTaskOptions() {
   els.preferredTask.innerHTML = options
     .map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`)
     .join("");
+}
+
+function populateLevelOptions() {
+  const config = getExamConfig(state.profile.preferredExam);
+  const options = getLevelOptions(state.profile.preferredExam);
+  if (!options.some((item) => item.value === state.profile.currentBand)) {
+    state.profile.currentBand = options[1]?.value || options[0]?.value || state.profile.currentBand;
+  }
+  if (!options.some((item) => item.value === state.profile.targetBand)) {
+    state.profile.targetBand = options[2]?.value || options[options.length - 1]?.value || state.profile.targetBand;
+  }
+  if (els.currentLevelLabel) {
+    els.currentLevelLabel.textContent = config.currentLevelLabel;
+  }
+  if (els.targetLevelLabel) {
+    els.targetLevelLabel.textContent = config.targetLevelLabel;
+  }
+  const markup = options
+    .map((item) => `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`)
+    .join("");
+  els.currentBand.innerHTML = markup;
+  els.targetBand.innerHTML = markup;
 }
 
 function populatePatternTaskOptions() {
@@ -2319,9 +2385,12 @@ function populateEssayTopics() {
 }
 
 function renderStats() {
-  const entries = state.history;
-  const average = entries.length ? entries.reduce((sum, item) => sum + item.band, 0) / entries.length : Number(state.profile.currentBand);
-  const best = entries.length ? Math.max(...entries.map((item) => item.band)) : Number(state.profile.currentBand);
+  const selectedExam = normalizeExam(state.profile.preferredExam);
+  const entries = state.history.filter((item) => normalizeExam(item.exam || "ielts") === selectedExam);
+  const scoredEntries = entries.map((item) => getHistoryScorePresentation(item).total);
+  const defaultValue = selectedExam === "kaoyan" ? 0 : Number(state.profile.currentBand);
+  const average = scoredEntries.length ? scoredEntries.reduce((sum, item) => sum + item, 0) / scoredEntries.length : defaultValue;
+  const best = scoredEntries.length ? Math.max(...scoredEntries) : defaultValue;
   els.statTotal.textContent = String(entries.length);
   els.statAverage.textContent = average.toFixed(1);
   els.statBest.textContent = best.toFixed(1);
@@ -2515,6 +2584,172 @@ function getCriterionLabel(prompt) {
   return prompt.task === "task1" ? "Task Achievement" : "Task Response";
 }
 
+function getLevelOptionLabel(exam, value) {
+  const option = getLevelOptions(exam).find((item) => item.value === String(value));
+  return option?.label || String(value || "");
+}
+
+function getKaoyanScoreMax(task) {
+  return task === "small" ? 10 : 20;
+}
+
+function computeKaoyanScore(prompt, breakdown, overallBand = 0) {
+  const task = prompt?.task || "large";
+  const weights = task === "small"
+    ? { taskResponse: 0.42, coherence: 0.2, lexical: 0.18, grammar: 0.2 }
+    : { taskResponse: 0.38, coherence: 0.24, lexical: 0.18, grammar: 0.2 };
+  const normalized = breakdown
+    ? (
+      Number(breakdown.taskResponse || 0) * weights.taskResponse
+      + Number(breakdown.coherence || 0) * weights.coherence
+      + Number(breakdown.lexical || 0) * weights.lexical
+      + Number(breakdown.grammar || 0) * weights.grammar
+    )
+    : Number(overallBand || 0);
+  return roundToHalf((normalized / 9) * getKaoyanScoreMax(task));
+}
+
+function getScorePresentation(prompt, overallBand, breakdown) {
+  const normalizedPrompt = normalizePromptDefinition(prompt);
+  if (getPromptExam(normalizedPrompt) === "kaoyan") {
+    const max = getKaoyanScoreMax(normalizedPrompt.task);
+    const total = computeKaoyanScore(normalizedPrompt, breakdown, overallBand);
+    return {
+      mode: "kaoyan",
+      total,
+      max,
+      totalLabel: "参考卷面分",
+      totalText: `${total.toFixed(1)} / ${max}`,
+      compactText: `${total.toFixed(1)}/${max}`,
+    };
+  }
+  return {
+    mode: "ielts",
+    total: Number(overallBand || 0),
+    max: 9,
+    totalLabel: "预估 Band",
+    totalText: Number(overallBand || 0).toFixed(1),
+    compactText: Number(overallBand || 0).toFixed(1),
+  };
+}
+
+function getHistoryScorePresentation(entry) {
+  const promptMeta = { exam: entry.exam || "ielts", task: entry.task || "task2" };
+  if (typeof entry.scoreValue === "number" && Number.isFinite(entry.scoreValue)) {
+    const mode = entry.scoreMode || (typeof entry.scoreMax === "number" ? "kaoyan" : "ielts");
+    const max = Number.isFinite(entry.scoreMax) ? entry.scoreMax : mode === "kaoyan" ? getKaoyanScoreMax(promptMeta.task) : 9;
+    const totalText = entry.scoreText || (mode === "kaoyan" ? `${entry.scoreValue.toFixed(1)} / ${max}` : entry.scoreValue.toFixed(1));
+    const compactText = entry.scoreCompactText || (mode === "kaoyan" ? `${entry.scoreValue.toFixed(1)}/${max}` : entry.scoreValue.toFixed(1));
+    return {
+      mode,
+      total: entry.scoreValue,
+      max,
+      totalLabel: entry.scoreLabel || (mode === "kaoyan" ? "参考卷面分" : "预估 Band"),
+      totalText,
+      compactText,
+    };
+  }
+  return getScorePresentation(promptMeta, entry.band || 0);
+}
+
+function buildPerformanceSummary(prompt, overallBand, breakdown) {
+  const normalizedPrompt = normalizePromptDefinition(prompt);
+  const exam = getPromptExam(normalizedPrompt);
+  const scoreView = getScorePresentation(normalizedPrompt, overallBand, breakdown);
+
+  if (exam === "kaoyan") {
+    const currentView = getScorePresentation(normalizedPrompt, Number(state.profile.currentBand || 0));
+    const targetView = getScorePresentation(normalizedPrompt, Number(state.profile.targetBand || 0));
+    const currentLabel = getLevelOptionLabel(exam, state.profile.currentBand);
+    const targetLabel = getLevelOptionLabel(exam, state.profile.targetBand);
+
+    if (scoreView.total >= targetView.total - 0.25) {
+      return normalizedPrompt.task === "small"
+        ? `这篇小作文已经摸到 ${targetLabel} 附近的卷面区间了，下一步重点是把语气和措辞磨得更自然。`
+        : `这篇大作文已经摸到 ${targetLabel} 附近的卷面区间了，后面更该盯的是评论深度和英文自然度。`;
+    }
+    if (scoreView.total >= currentView.total - 0.25) {
+      return normalizedPrompt.task === "small"
+        ? `这篇小作文已经站上 ${currentLabel} 附近，继续把格式、信息完整度和礼貌度压稳，会更接近 ${targetLabel}。`
+        : `这篇大作文已经站上 ${currentLabel} 附近，继续把“现象 -> 评论 -> 判断”这条线拉直，会更接近 ${targetLabel}。`;
+    }
+    return normalizedPrompt.task === "small"
+      ? "这篇小作文还在基础整理阶段，先把格式、写作目的和关键信息写稳，再往上冲会更省力。"
+      : "这篇大作文更像在暴露短板，先把现象、评论和结尾判断这三块搭顺，再谈冲更高档位。";
+  }
+
+  return overallBand >= Number(state.profile.targetBand)
+    ? "这次已经达到你的目标带。下一步可以把重点放在稳定输出和减少失误。"
+    : overallBand >= Number(state.profile.currentBand)
+      ? "这次表现已经高于或接近你当前设定水平，继续压实结构和词汇就有机会往上走。"
+      : "这次更像是在暴露短板，很适合用来做下一轮针对性练习。";
+}
+
+function getReviewTargetDescriptor(prompt) {
+  const normalizedPrompt = normalizePromptDefinition(prompt);
+  if (getPromptExam(normalizedPrompt) === "kaoyan") {
+    const targetView = getScorePresentation(normalizedPrompt, Number(state.profile.targetBand || 0));
+    return `${getLevelOptionLabel("kaoyan", state.profile.targetBand)}（参考卷面 ${targetView.compactText}）`;
+  }
+  return String(state.profile.targetBand || "");
+}
+
+function describeKaoyanMetric(metric, score, prompt) {
+  const task = prompt?.task || "large";
+  const index = score >= 7.5 ? 3 : score >= 6 ? 2 : score >= 4.5 ? 1 : 0;
+  const map = {
+    taskResponse: task === "small"
+      ? [
+        "格式和任务完成度都偏弱，像临时写的消息，不太像正式应用文。",
+        "基本完成了任务，但格式、礼貌度或信息完整度还有空位。",
+        "任务完成度比较稳，格式感和语气也基本在线。",
+        "任务意识清楚，格式完整，信息安排自然，已经比较像一封成熟的英文应用文。",
+      ]
+      : [
+        "还停留在描述表面现象，评论和主线都偏弱。",
+        "能看出主题，但图画/图表和观点之间还没完全拧成一股绳。",
+        "内容主线比较清楚，描述和评论开始形成配合。",
+        "不只是看图说话，已经能把现象、寓意和判断稳定串起来。",
+      ],
+    coherence: [
+      "结构还比较松，段落像临时拼接起来的。",
+      "顺序基本可读，但转折和推进还不够自然。",
+      "结构比较清楚，段落各自有活干。",
+      "推进流畅，读起来像一口气讲完一件事，而不是边走边补路。",
+    ],
+    lexical: [
+      "词比较直白，重复也偏多，英文味道还不够。",
+      "能把意思说出来，但还缺少更自然的搭配。",
+      "表达比较稳，开始有自己的句子质感。",
+      "词汇自然、贴题，读起来不太像硬翻出来的英语。",
+    ],
+    grammar: [
+      "句子稳定性一般，容易出现草稿感。",
+      "基础结构基本能撑住，但复杂句还不够稳。",
+      "句式有变化，准确度也比较可用。",
+      "句法控制比较成熟，复杂句不容易自己绊自己。",
+    ],
+  };
+  return map[metric][index];
+}
+
+function getMetricSnapshot(prompt, metricKey, value) {
+  const exam = getPromptExam(prompt);
+  if (exam === "kaoyan") {
+    const displayValue = roundToHalf((Number(value || 0) / 9) * 5);
+    return {
+      valueText: `${displayValue.toFixed(1)}/5`,
+      helper: describeKaoyanMetric(metricKey, Number(value || 0), prompt),
+      percentage: Math.min(100, (displayValue / 5) * 100),
+    };
+  }
+  return {
+    valueText: Number(value || 0).toFixed(1),
+    helper: describeMetric(metricKey, Number(value || 0)),
+    percentage: Math.min(100, (Number(value || 0) / 9) * 100),
+  };
+}
+
 function getParagraphPlaceholder(prompt) {
   const exam = getPromptExam(prompt);
   if (exam === "kaoyan") {
@@ -2543,6 +2778,151 @@ function getCustomPromptPlaceholder() {
   return state.selections.essayExam === "kaoyan"
     ? "想练自己的考研真题，就把题目丢进来。系统会自动按小作文 / 大作文的逻辑来批。"
     : "如果你想练自己手头的剑桥原题，可以把题目粘贴在这里。留空则使用上方内置题库。";
+}
+
+function hasCustomPromptImage() {
+  return Boolean(customPromptImageState.dataUrl);
+}
+
+function getCustomPromptImageAttachment() {
+  if (!hasCustomPromptImage()) {
+    return null;
+  }
+  return {
+    data_url: customPromptImageState.dataUrl,
+    name: customPromptImageState.name,
+    mime_type: customPromptImageState.mimeType,
+    width: customPromptImageState.width,
+    height: customPromptImageState.height,
+  };
+}
+
+function renderCustomPromptImagePreview() {
+  if (!els.customPromptImagePreview) {
+    return;
+  }
+  if (!hasCustomPromptImage()) {
+    els.customPromptImagePreview.innerHTML = `
+      <div class="prompt-image-preview__empty">
+        <strong>还没上传题图</strong>
+        <p>如果你的自定义题目是图画、图表或手机截图，直接扔进来，AI 会连图一起看。</p>
+      </div>
+    `;
+    return;
+  }
+
+  els.customPromptImagePreview.innerHTML = `
+    <figure class="prompt-image-card">
+      <img src="${escapeHtml(customPromptImageState.dataUrl)}" alt="${escapeHtml(customPromptImageState.name || "题目图片")}" />
+      <figcaption>
+        <strong>${escapeHtml(customPromptImageState.name || "已上传题图")}</strong>
+        <span>${customPromptImageState.width} × ${customPromptImageState.height}</span>
+      </figcaption>
+    </figure>
+  `;
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("读取题图失败，请换一张再试。"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImageElement(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("这张图片看起来不太能被正常打开。"));
+    image.src = dataUrl;
+  });
+}
+
+async function normalizePromptImageFile(file) {
+  if (!file || !String(file.type || "").startsWith("image/")) {
+    throw new Error("这里只能上传图片文件。");
+  }
+
+  const originalDataUrl = await readFileAsDataUrl(file);
+  const image = await loadImageElement(originalDataUrl);
+  const scale = Math.min(1, MAX_CUSTOM_PROMPT_IMAGE_EDGE / Math.max(image.width || 1, image.height || 1));
+  const width = Math.max(1, Math.round((image.width || 1) * scale));
+  const height = Math.max(1, Math.round((image.height || 1) * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("浏览器暂时没法处理这张题图。");
+  }
+  context.drawImage(image, 0, 0, width, height);
+
+  let quality = 0.88;
+  let dataUrl = canvas.toDataURL("image/jpeg", quality);
+  while (dataUrl.length > MAX_CUSTOM_PROMPT_IMAGE_DATA_URL_LENGTH && quality > 0.5) {
+    quality -= 0.08;
+    dataUrl = canvas.toDataURL("image/jpeg", quality);
+  }
+  if (dataUrl.length > MAX_CUSTOM_PROMPT_IMAGE_DATA_URL_LENGTH) {
+    throw new Error("题图还是有点大，建议截得再紧一点再传。");
+  }
+
+  return {
+    dataUrl,
+    name: file.name || "prompt-image.jpg",
+    mimeType: "image/jpeg",
+    width,
+    height,
+  };
+}
+
+async function handleCustomPromptImageChange(event) {
+  const file = event.target?.files?.[0];
+  if (!file) {
+    return;
+  }
+
+  try {
+    els.customPromptImagePreview.innerHTML = `
+      <div class="prompt-image-preview__empty">
+        <strong>题图处理中</strong>
+        <p>正在把图片压一压，免得它把接口撑成一个鼓包。</p>
+      </div>
+    `;
+    const normalized = await normalizePromptImageFile(file);
+    customPromptImageState.dataUrl = normalized.dataUrl;
+    customPromptImageState.name = normalized.name;
+    customPromptImageState.mimeType = normalized.mimeType;
+    customPromptImageState.width = normalized.width;
+    customPromptImageState.height = normalized.height;
+    renderCustomPromptImagePreview();
+  } catch (error) {
+    clearCustomPromptImage();
+    els.essayResult.insertAdjacentHTML("afterbegin", `
+      <div class="feedback feedback--warning">
+        <strong>题图没传成功</strong>
+        <p>${escapeHtml(error.message || "图片处理失败。")}</p>
+      </div>
+    `);
+  } finally {
+    if (els.customPromptImage) {
+      els.customPromptImage.value = "";
+    }
+  }
+}
+
+function clearCustomPromptImage() {
+  customPromptImageState.dataUrl = "";
+  customPromptImageState.name = "";
+  customPromptImageState.mimeType = "";
+  customPromptImageState.width = 0;
+  customPromptImageState.height = 0;
+  if (els.customPromptImage) {
+    els.customPromptImage.value = "";
+  }
+  renderCustomPromptImagePreview();
 }
 
 function renderPromptPanel(prompt, mode) {
@@ -2591,6 +2971,15 @@ function renderPromptPanel(prompt, mode) {
       <h3>${escapeHtml(prompt.title)}</h3>
       <p>${escapeHtml(prompt.prompt)}</p>
     </div>
+    ${prompt.image_attachment?.data_url ? `
+      <figure class="prompt-image-card prompt-image-card--inline">
+        <img src="${escapeHtml(prompt.image_attachment.data_url)}" alt="${escapeHtml(prompt.image_attachment.name || "题目图片")}" />
+        <figcaption>
+          <strong>题图已附上</strong>
+          <span>${escapeHtml(prompt.image_attachment.name || "自定义题目图片")}</span>
+        </figcaption>
+      </figure>
+    ` : ""}
     ${details.length ? `<div><strong>题目信息</strong><ul>${details.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>` : ""}
     ${requirements.length ? `<div><strong>写作清单</strong><ul>${requirements.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul></div>` : ""}
     ${guidanceMarkup}
@@ -2610,7 +2999,24 @@ function evaluateParagraph() {
   renderLocalEvaluation(els.paragraphResult, result, { title: prompt.title, modeLabel: "段落练习" });
   renderCorpus();
   saveState();
-  pushHistory({ kind: "paragraph", exam: getPromptExam(prompt), task: prompt.task, title: prompt.title, band: result.overallBand, words: result.words, date: nowLabel(), summary: result.summary, source: "local" });
+  const scoreView = getScorePresentation(prompt, result.overallBand, result.breakdown);
+  pushHistory({
+    kind: "paragraph",
+    exam: getPromptExam(prompt),
+    task: prompt.task,
+    title: prompt.title,
+    band: result.overallBand,
+    scoreValue: scoreView.total,
+    scoreText: scoreView.totalText,
+    scoreCompactText: scoreView.compactText,
+    scoreLabel: scoreView.totalLabel,
+    scoreMode: scoreView.mode,
+    scoreMax: scoreView.max,
+    words: result.words,
+    date: nowLabel(),
+    summary: result.summary,
+    source: "local",
+  });
 }
 
 function evaluateEssayLocal() {
@@ -2625,7 +3031,24 @@ function evaluateEssayLocal() {
   renderLocalEvaluation(els.essayResult, result, { title: prompt.title, modeLabel: "本地快评" });
   renderCorpus();
   saveState();
-  pushHistory({ kind: "essay", exam: getPromptExam(prompt), task: prompt.task, title: prompt.title, band: result.overallBand, words: result.words, date: nowLabel(), summary: result.summary, source: "local" });
+  const scoreView = getScorePresentation(prompt, result.overallBand, result.breakdown);
+  pushHistory({
+    kind: "essay",
+    exam: getPromptExam(prompt),
+    task: prompt.task,
+    title: prompt.title,
+    band: result.overallBand,
+    scoreValue: scoreView.total,
+    scoreText: scoreView.totalText,
+    scoreCompactText: scoreView.compactText,
+    scoreLabel: scoreView.totalLabel,
+    scoreMode: scoreView.mode,
+    scoreMax: scoreView.max,
+    words: result.words,
+    date: nowLabel(),
+    summary: result.summary,
+    source: "local",
+  });
 }
 
 function setEssayAiBusy(isBusy, label = "AI 精批") {
@@ -2661,12 +3084,25 @@ function applyAiEvaluationResult(prompt, localReview, payload) {
   renderLocalEvaluation(els.essayResult, localReview, { title: prompt.title, modeLabel: "本地快评" });
   els.essayResult.insertAdjacentHTML("beforeend", renderAiEvaluation(prompt, payload));
   updateCorpusFromReview(prompt, localReview, payload.review || null);
+  const aiBreakdown = {
+    taskResponse: Number(payload.review?.band_breakdown?.task_response || 0),
+    coherence: Number(payload.review?.band_breakdown?.coherence_cohesion || 0),
+    lexical: Number(payload.review?.band_breakdown?.lexical_resource || 0),
+    grammar: Number(payload.review?.band_breakdown?.grammatical_range_accuracy || 0),
+  };
+  const scoreView = getScorePresentation(prompt, Number(payload.review?.overall_band || localReview.overallBand), aiBreakdown);
   pushHistory({
     kind: "essay",
     exam: getPromptExam(prompt),
     task: prompt.task,
     title: `${prompt.title} · AI`,
     band: Number(payload.review?.overall_band || localReview.overallBand),
+    scoreValue: scoreView.total,
+    scoreText: scoreView.totalText,
+    scoreCompactText: scoreView.compactText,
+    scoreLabel: scoreView.totalLabel,
+    scoreMode: scoreView.mode,
+    scoreMax: scoreView.max,
     words: localReview.words,
     date: nowLabel(),
     summary: payload.review?.summary || localReview.summary,
@@ -2768,7 +3204,7 @@ async function evaluateEssayAi() {
         device_id: getCloudDeviceId(),
         prompt_payload: prompt,
         essay_text: text,
-        target_band: state.profile.targetBand,
+        target_band: getReviewTargetDescriptor(prompt),
         local_metrics: {
           words: localReview.words,
           sentences: localReview.sentences,
@@ -2818,8 +3254,10 @@ async function evaluateEssayAi() {
 }
 
 function renderLocalEvaluation(container, result, meta) {
-  const targetGap = Math.max(0, Number(state.profile.targetBand) - result.overallBand);
-  const criterionLabel = getCriterionLabel(result.promptMeta || { exam: result.exam, task: result.task });
+  const promptMeta = result.promptMeta || { exam: result.exam, task: result.task };
+  const exam = getPromptExam(promptMeta);
+  const scoreView = getScorePresentation(promptMeta, result.overallBand, result.breakdown);
+  const criterionLabel = getCriterionLabel(promptMeta);
   const metricCards = [
     { key: "taskResponse", label: criterionLabel, value: result.breakdown.taskResponse },
     { key: "coherence", label: "Coherence & Cohesion", value: result.breakdown.coherence },
@@ -2828,13 +3266,13 @@ function renderLocalEvaluation(container, result, meta) {
   ];
 
   const cards = metricCards.map((card) => {
-    const percentage = Math.min(100, (card.value / 9) * 100);
+    const snapshot = getMetricSnapshot(promptMeta, card.key, card.value);
     return `
       <article class="result-card">
-        <span class="result-card__score">${card.value.toFixed(1)}</span>
+        <span class="result-card__score">${snapshot.valueText}</span>
         <h3>${escapeHtml(card.label)}</h3>
-        <p>${escapeHtml(describeMetric(card.key, card.value))}</p>
-        <div class="score-strip"><span style="width:${percentage}%"></span></div>
+        <p>${escapeHtml(snapshot.helper)}</p>
+        <div class="score-strip"><span style="width:${snapshot.percentage}%"></span></div>
       </article>
     `;
   }).join("");
@@ -2846,16 +3284,19 @@ function renderLocalEvaluation(container, result, meta) {
 
   container.innerHTML = `
     <h3>${escapeHtml(meta.modeLabel)}</h3>
-    <p><strong>${escapeHtml(meta.title)}</strong> 的估算总分为 <strong>${result.overallBand.toFixed(1)}</strong>。${escapeHtml(result.summary)}</p>
+    <p><strong>${escapeHtml(meta.title)}</strong> 的${scoreView.totalLabel}为 <strong>${scoreView.totalText}</strong>。${escapeHtml(result.summary)}</p>
     <div class="result-stats">
       <span class="chip">${escapeHtml(labelForExam(result.exam))}</span>
       <span class="chip">${labelForTask(result.task)}</span>
+      <span class="chip">${scoreView.totalLabel} ${scoreView.totalText}</span>
       <span class="chip">${result.words} 词</span>
       <span class="chip">${result.sentences} 句</span>
       <span class="chip">${result.paragraphs} 段</span>
       <span class="chip">关键词覆盖 ${result.keywordCoverage}%</span>
       <span class="chip">连接词 ${result.connectorCount} 个</span>
-      <span class="chip">距离目标分 ${targetGap.toFixed(1)}</span>
+      ${exam === "ielts"
+        ? `<span class="chip">距离目标分 ${Math.max(0, Number(state.profile.targetBand) - result.overallBand).toFixed(1)}</span>`
+        : `<span class="chip">当前档位 ${escapeHtml(getLevelOptionLabel(exam, state.profile.currentBand))}</span><span class="chip">目标档位 ${escapeHtml(getLevelOptionLabel(exam, state.profile.targetBand))}</span>`}
     </div>
     <div class="result-grid">${cards}</div>
     <div class="feedback-grid">
@@ -2907,6 +3348,17 @@ function renderAiEvaluation(prompt, payload) {
   const review = payload.review || {};
   const criterionLabel = getCriterionLabel(prompt);
   const backendLabel = payload.provider_label || getSelectedAiBackendStatus().label;
+  const breakdown = {
+    taskResponse: Number(review.band_breakdown?.task_response || 0),
+    coherence: Number(review.band_breakdown?.coherence_cohesion || 0),
+    lexical: Number(review.band_breakdown?.lexical_resource || 0),
+    grammar: Number(review.band_breakdown?.grammatical_range_accuracy || 0),
+  };
+  const scoreView = getScorePresentation(prompt, Number(review.overall_band || 0), breakdown);
+  const criterionSnapshot = getMetricSnapshot(prompt, "taskResponse", breakdown.taskResponse);
+  const coherenceSnapshot = getMetricSnapshot(prompt, "coherence", breakdown.coherence);
+  const lexicalSnapshot = getMetricSnapshot(prompt, "lexical", breakdown.lexical);
+  const grammarSnapshot = getMetricSnapshot(prompt, "grammar", breakdown.grammar);
   return `
     <div class="analysis-shell">
       <div class="tag-row">
@@ -2915,28 +3367,28 @@ function renderAiEvaluation(prompt, payload) {
         <span class="tag">${labelForTask(prompt.task)}</span>
         <span class="tag">${escapeHtml(backendLabel)}</span>
         <span class="tag">模型 ${escapeHtml(payload.review_model || aiState.reviewModel || "")}</span>
-        <span class="tag">预估 ${Number(review.overall_band || 0).toFixed(1)}</span>
+        <span class="tag">${scoreView.totalLabel} ${scoreView.totalText}</span>
       </div>
       <div class="analysis-grid">
         <article class="analysis-card">
-          <span>总分预估</span>
-          <strong>${Number(review.overall_band || 0).toFixed(1)}</strong>
+          <span>${scoreView.totalLabel}</span>
+          <strong>${scoreView.totalText}</strong>
         </article>
         <article class="analysis-card">
           <span>${criterionLabel}</span>
-          <strong>${Number(review.band_breakdown?.task_response || 0).toFixed(1)}</strong>
+          <strong>${criterionSnapshot.valueText}</strong>
         </article>
         <article class="analysis-card">
           <span>Coherence</span>
-          <strong>${Number(review.band_breakdown?.coherence_cohesion || 0).toFixed(1)}</strong>
+          <strong>${coherenceSnapshot.valueText}</strong>
         </article>
         <article class="analysis-card">
           <span>Lexical</span>
-          <strong>${Number(review.band_breakdown?.lexical_resource || 0).toFixed(1)}</strong>
+          <strong>${lexicalSnapshot.valueText}</strong>
         </article>
         <article class="analysis-card">
           <span>Grammar</span>
-          <strong>${Number(review.band_breakdown?.grammatical_range_accuracy || 0).toFixed(1)}</strong>
+          <strong>${grammarSnapshot.valueText}</strong>
         </article>
       </div>
       <div class="feedback-grid">
@@ -3607,11 +4059,7 @@ function evaluateWriting(text, prompt, mode) {
     improvementActions.push("试着增加 because, while, which means, although 这类从句结构。");
   }
 
-  const summary = overallBand >= Number(state.profile.targetBand)
-    ? "这次已经达到你的目标带。下一步可以把重点放在稳定输出和减少失误。"
-    : overallBand >= Number(state.profile.currentBand)
-      ? "这次表现已经高于或接近你当前设定水平，继续压实结构和词汇就有机会往上走。"
-      : "这次更像是在暴露短板，很适合用来做下一轮针对性练习。";
+  const summary = buildPerformanceSummary(promptMeta, overallBand, { taskResponse, coherence, lexical, grammar });
 
   const languageReview = buildLanguageReview(text, prompt, mode, sentences, fragmentCount);
   const polishedVersion = buildPolishedVersion(text, prompt);
@@ -3685,22 +4133,27 @@ function renderHistory() {
     return;
   }
 
-  els.historyList.innerHTML = history.slice(0, 12).map((item) => `
-    <article class="history-item">
-      <div>
-        <span class="history-item__band">${Number(item.band).toFixed(1)}</span>
-        <h3>${escapeHtml(item.title)}</h3>
-      </div>
-      <div class="history-tags">
-        <span class="tag">${item.kind === "essay" ? "整篇" : "段落"}</span>
-        <span class="tag">${escapeHtml(labelForExam(item.exam || "ielts"))}</span>
-        <span class="tag">${labelForTask(item.task)}</span>
-        <span class="tag">${item.source === "ai" ? "AI" : "本地"}</span>
-      </div>
-      <p>${escapeHtml(item.summary)}</p>
-      <p>${escapeHtml(item.date)}</p>
-    </article>
-  `).join("");
+  els.historyList.innerHTML = history.slice(0, 12).map((item) => {
+    const scoreView = getHistoryScorePresentation(item);
+    const scoreClass = scoreView.mode === "kaoyan" ? "history-item__band history-item__band--compact" : "history-item__band";
+    return `
+      <article class="history-item">
+        <div>
+          <span class="${scoreClass}">${escapeHtml(scoreView.compactText)}</span>
+          <h3>${escapeHtml(item.title)}</h3>
+        </div>
+        <div class="history-tags">
+          <span class="tag">${item.kind === "essay" ? "整篇" : "段落"}</span>
+          <span class="tag">${escapeHtml(labelForExam(item.exam || "ielts"))}</span>
+          <span class="tag">${labelForTask(item.task)}</span>
+          <span class="tag">${escapeHtml(scoreView.totalLabel)}</span>
+          <span class="tag">${item.source === "ai" ? "AI" : "本地"}</span>
+        </div>
+        <p>${escapeHtml(item.summary)}</p>
+        <p>${escapeHtml(item.date)}</p>
+      </article>
+    `;
+  }).join("");
 }
 
 function pushHistory(entry) {
@@ -3735,7 +4188,8 @@ function currentEssayPrompt() {
 function activeEssayPrompt() {
   const basePrompt = currentEssayPrompt();
   const customPrompt = els.customPrompt.value.trim();
-  if (!customPrompt) {
+  const imageAttachment = getCustomPromptImageAttachment();
+  if (!customPrompt && !imageAttachment) {
     return basePrompt;
   }
   const normalizedExam = normalizeExam(state.selections.essayExam);
@@ -3747,18 +4201,23 @@ function activeEssayPrompt() {
     : state.selections.essayTask === "task1"
       ? ["至少 150 词", "写出 overview", "优先概括主趋势和关键对比"]
       : ["至少 250 词", "立场要稳定清楚", "每段围绕一个主论点展开"];
+  const customTitle = imageAttachment ? "自定义题目（含题图）" : "自定义题目";
   return {
-    title: "自定义题目",
+    title: customTitle,
     source: "用户粘贴题目",
     exam: normalizedExam,
     task: state.selections.essayTask,
     genre: "custom prompt",
-    prompt: customPrompt,
-    details: ["当前使用你粘贴的题目，下面的结构建议已切到通用模式。"],
+    prompt: customPrompt || "已上传题目图片，请结合图片理解题目要求。",
+    details: [
+      customPrompt ? "当前使用你粘贴的题目，下面的结构建议已切到通用模式。" : "当前使用你上传的题目图片，AI 会结合图片理解题目。",
+      ...(imageAttachment ? [`已附题图：${imageAttachment.name}`] : []),
+    ],
     requirements,
     categories: [],
     topics: [],
     minimumWords,
+    image_attachment: imageAttachment,
     keywords: extractPromptKeywords(customPrompt).length ? extractPromptKeywords(customPrompt) : basePrompt.keywords,
   };
 }
@@ -3898,7 +4357,7 @@ function getTopRepeatRatio(text) {
 }
 
 function clampBand(value) {
-  return Math.min(8.5, Math.max(4, roundToHalf(value)));
+  return Math.min(9, Math.max(0, roundToHalf(value)));
 }
 
 function roundToHalf(value) {

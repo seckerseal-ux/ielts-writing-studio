@@ -160,7 +160,7 @@
               </select>
             </label>
             <label>
-              当前写作水平
+              <span id="current-level-label">当前写作水平</span>
               <select id="current-band">
                 <option value="5.5">5.5</option>
                 <option value="6.0" selected>6.0</option>
@@ -170,7 +170,7 @@
               </select>
             </label>
             <label>
-              目标分数
+              <span id="target-level-label">目标分数</span>
               <select id="target-band">
                 <option value="6.0">6.0</option>
                 <option value="6.5">6.5</option>
@@ -330,6 +330,18 @@
             class="support-box"
             placeholder="自定义题目可以直接丢这里。系统会按你上面选的考试和题型切换批改逻辑。"
           ></textarea>
+          <div class="prompt-upload-panel">
+            <div class="prompt-upload-panel__copy">
+              <strong>题目图片</strong>
+              <p>考研图画题、图表题，或者手机里那张不想手敲的题目图，都可以直接扔进来。</p>
+            </div>
+            <div class="prompt-upload-panel__actions">
+              <label class="button button--ghost upload-button" for="custom-prompt-image">上传题图</label>
+              <button class="button button--ghost" id="custom-prompt-image-clear" type="button">移除题图</button>
+              <input id="custom-prompt-image" type="file" accept="image/*" hidden />
+            </div>
+          </div>
+          <div class="prompt-image-preview" id="custom-prompt-image-preview"></div>
           <div class="timer-panel">
             <div class="timer-display" id="timer-display">40:00</div>
             <div class="timer-actions">

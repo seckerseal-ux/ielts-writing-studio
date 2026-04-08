@@ -103,6 +103,8 @@ You support both IELTS Academic Writing and Chinese postgraduate entrance exam E
 Return feedback in Simplified Chinese, but keep quoted essay snippets and improved English phrases in English.
 Estimate sub-scores in 0.5 increments from 0 to 9 for consistency.
 When exam=ielts, use IELTS Academic Writing expectations.
+When exam=kaoyan, keep the hidden internal score in the 0-9 range for consistency, but do not mention IELTS bands such as "6.5 分" or "Band 6.5" in prose feedback.
+When exam=kaoyan, describe performance in terms of task completion, structure, expression quality, and likely paper-score tendency instead of IELTS-style band wording.
 For IELTS Task 1, treat the first criterion as Task Achievement and be strict about overview, data selection, and avoiding personal opinion.
 For IELTS Task 2, treat the first criterion as Task Response and be strict about fully answering the question, maintaining a clear position, and supporting ideas.
 When exam=kaoyan and task=small, focus on task fulfilment, register, format, clarity, completeness, and whether the piece reads like a real English email/notice/letter.
@@ -468,13 +470,58 @@ function getExamReviewProfile(promptPayload) {
   };
 }
 
+function getPromptImageAttachment(promptPayload) {
+  const attachment = promptPayload?.image_attachment;
+  if (!attachment || typeof attachment !== "object" || Array.isArray(attachment)) {
+    return null;
+  }
+
+  const dataUrl = String(attachment.data_url || "").trim();
+  if (!/^data:image\//i.test(dataUrl)) {
+    return null;
+  }
+
+  return {
+    dataUrl,
+    name: String(attachment.name || "prompt-image").trim(),
+    mimeType: String(attachment.mime_type || "").trim(),
+    width: Number(attachment.width || 0) || 0,
+    height: Number(attachment.height || 0) || 0,
+  };
+}
+
+function summarizePromptPayload(promptPayload) {
+  if (!promptPayload || typeof promptPayload !== "object" || Array.isArray(promptPayload)) {
+    return {};
+  }
+
+  const summary = { ...promptPayload };
+  const imageAttachment = getPromptImageAttachment(promptPayload);
+  if (imageAttachment) {
+    summary.image_attachment = {
+      attached: true,
+      name: imageAttachment.name,
+      mime_type: imageAttachment.mimeType,
+      width: imageAttachment.width,
+      height: imageAttachment.height,
+    };
+  } else {
+    delete summary.image_attachment;
+  }
+  return summary;
+}
+
 function buildReviewPrompt(promptPayload, essayText, localMetrics, targetBand) {
   const profile = getExamReviewProfile(promptPayload);
+  const promptSummary = summarizePromptPayload(promptPayload);
+  const hasPromptImage = Boolean(getPromptImageAttachment(promptPayload));
   return `
 请按 ${profile.examLabel} 的 ${profile.taskLabel} 标准做评估。
 
 题目定义:
-${JSON.stringify(promptPayload || {}, null, 2)}
+${JSON.stringify(promptSummary, null, 2)}
+
+${hasPromptImage ? "补充说明: 题目附带了一张图片，请先结合图片理解题意，再看文字说明。" : ""}
 
 考生作文:
 ${essayText}
@@ -502,6 +549,18 @@ ${profile.focuses.map((item, index) => `${index + 1}. ${item}`).join("\n")}
 4. 3-5 条 paragraph_plan，告诉考生如何更好地重写这篇作文的结构。
 5. 3-5 个 useful_phrases，${profile.phraseLine}
 `.trim();
+}
+
+function buildReviewMessageContent(promptPayload, userInput) {
+  const instruction = `${userInput}\n\n只返回一个合法 JSON 对象，不要添加 markdown、解释、思考过程或代码块。\nJSON Schema:\n${JSON.stringify(WRITING_REVIEW_SCHEMA)}`;
+  const attachment = getPromptImageAttachment(promptPayload);
+  if (!attachment) {
+    return instruction;
+  }
+  return [
+    { type: "text", text: instruction },
+    { type: "image_url", image_url: { url: attachment.dataUrl } },
+  ];
 }
 
 async function withTimeout(promise, timeoutMs, message) {
@@ -547,7 +606,7 @@ function shouldRetryWithFallback(error) {
   return /timeout|timed out|rate limit|quota|exceeded|too many|overloaded|busy|temporar|unavailable|fetch failed|invalid json|无法解析的 json|malformed json/.test(message);
 }
 
-async function requestFromOpenAICompatible(endpoint, userInput) {
+async function requestFromOpenAICompatible(endpoint, promptPayload, userInput) {
   if (!endpoint?.apiKey) {
     throw createError(`缺少 ${endpoint?.label || "OpenAI 兼容"} 的 API Key。`, 503);
   }
@@ -570,7 +629,7 @@ async function requestFromOpenAICompatible(endpoint, userInput) {
           { role: "system", content: WRITING_REVIEW_INSTRUCTIONS },
           {
             role: "user",
-            content: `${userInput}\n\n只返回一个合法 JSON 对象，不要添加 markdown、解释、思考过程或代码块。\nJSON Schema:\n${JSON.stringify(WRITING_REVIEW_SCHEMA)}`,
+            content: buildReviewMessageContent(promptPayload, userInput),
           },
         ],
         temperature: 0.2,
@@ -591,7 +650,7 @@ async function requestFromOpenAICompatible(endpoint, userInput) {
   };
 }
 
-async function requestFromOpenRouter(config, userInput) {
+async function requestFromOpenRouter(config, promptPayload, userInput) {
   if (!config.apiKey) {
     throw createError("缺少 OPENROUTER_API_KEY。", 503);
   }
@@ -611,7 +670,7 @@ async function requestFromOpenRouter(config, userInput) {
           { role: "system", content: WRITING_REVIEW_INSTRUCTIONS },
           {
             role: "user",
-            content: `${userInput}\n\n只返回一个合法 JSON 对象，不要添加 markdown、解释、思考过程或代码块。\nJSON Schema:\n${JSON.stringify(WRITING_REVIEW_SCHEMA)}`,
+            content: buildReviewMessageContent(promptPayload, userInput),
           },
         ],
         temperature: 0.2,
@@ -636,18 +695,18 @@ export async function requestStructuredReview(env, providerName, promptPayload, 
   const userInput = buildReviewPrompt(promptPayload, essayText, localMetrics, targetBand);
 
   if (provider === "openrouter") {
-    return requestFromOpenRouter(getOpenRouterConfig(env), userInput);
+    return requestFromOpenRouter(getOpenRouterConfig(env), promptPayload, userInput);
   }
 
   const primary = getOpenAICompatiblePrimary(env);
   const fallback = getOpenAICompatibleFallback(env);
 
   try {
-    return await requestFromOpenAICompatible(primary, userInput);
+    return await requestFromOpenAICompatible(primary, promptPayload, userInput);
   } catch (error) {
     if (!fallback || !shouldRetryWithFallback(error)) {
       throw error;
     }
-    return requestFromOpenAICompatible(fallback, userInput);
+    return requestFromOpenAICompatible(fallback, promptPayload, userInput);
   }
 }

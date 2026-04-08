@@ -19,6 +19,36 @@ function validateEssayText(payload) {
   return essayText;
 }
 
+function sanitizePromptPayload(rawPayload) {
+  const payload = rawPayload && typeof rawPayload === "object" && !Array.isArray(rawPayload)
+    ? { ...rawPayload }
+    : {};
+  const attachment = payload.image_attachment;
+
+  if (!attachment || typeof attachment !== "object" || Array.isArray(attachment)) {
+    delete payload.image_attachment;
+    return payload;
+  }
+
+  const dataUrl = String(attachment.data_url || "").trim();
+  if (!/^data:image\//i.test(dataUrl)) {
+    throw Object.assign(new Error("题图格式不对，请重新上传图片。"), { status: 400 });
+  }
+  if (dataUrl.length > 1100000) {
+    throw Object.assign(new Error("题图有点大，请裁小一点再上传。"), { status: 400 });
+  }
+
+  payload.image_attachment = {
+    data_url: dataUrl,
+    name: String(attachment.name || "prompt-image").trim().slice(0, 120),
+    mime_type: String(attachment.mime_type || "image/jpeg").trim().slice(0, 80),
+    width: Math.max(0, Number(attachment.width || 0) || 0),
+    height: Math.max(0, Number(attachment.height || 0) || 0),
+  };
+
+  return payload;
+}
+
 async function processReviewJob(env, job) {
   await markReviewJobRunning(env, job.id, {
     provider: job.provider,
@@ -63,6 +93,7 @@ export async function onRequestPost(context) {
       ? "openrouter"
       : "openai";
     const essayText = validateEssayText(payload);
+    const promptPayload = sanitizePromptPayload(payload.prompt_payload);
     const providerStatus = status.backends?.[provider];
 
     if (!providerStatus?.available) {
@@ -74,8 +105,8 @@ export async function onRequestPost(context) {
       provider,
       provider_label: providerStatus.provider_label,
       review_model: providerStatus.writing_review_model,
-      title: String(payload.prompt_payload?.title || "").trim(),
-      prompt_payload: payload.prompt_payload || {},
+      title: String(promptPayload?.title || "").trim(),
+      prompt_payload: promptPayload,
       essay_text: essayText,
       local_metrics: payload.local_metrics || {},
       target_band: payload.target_band || "",
