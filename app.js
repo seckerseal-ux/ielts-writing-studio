@@ -1750,25 +1750,41 @@ function renderPhraseBank() {
     return taskMatch && categoryMatch;
   });
 
+  if (!filtered.length) {
+    els.patternGrid.innerHTML = `
+      <div class="empty-state">
+        <strong>这组条件下还没有句式</strong>
+        <p>可以把任务类型或功能切回“全部”，先从更宽一点的范围开始挑。</p>
+      </div>
+    `;
+    return;
+  }
+
   els.patternGrid.innerHTML = filtered
     .map((item) => `
-      <article class="pattern-card">
-        <div class="pattern-card__header">
-          <div>
-            <h3>${escapeHtml(item.title)}</h3>
-            <div class="tag-row">
-              <span class="tag">${labelForTask(item.task)}</span>
-              <span class="tag">${escapeHtml(item.category)}</span>
+      <details class="pattern-card pattern-card--collapsible">
+        <summary class="pattern-card__summary">
+          <div class="pattern-card__header">
+            <div>
+              <h3>${escapeHtml(item.title)}</h3>
+              <div class="tag-row">
+                <span class="tag">${labelForTask(item.task)}</span>
+                <span class="tag">${escapeHtml(item.category)}</span>
+              </div>
             </div>
+            <span class="pattern-card__toggle" aria-hidden="true"></span>
           </div>
+          <div class="pattern-card__preview">${escapeHtml(compactText(item.structure, 80))}</div>
+        </summary>
+        <div class="pattern-card__body">
+          <div class="pattern-card__structure">${escapeHtml(item.structure)}</div>
+          <div class="pattern-card__example">
+            <strong>例句</strong>
+            <p>${escapeHtml(item.example)}</p>
+          </div>
+          <ul>${item.tips.map((tip) => `<li>${escapeHtml(tip)}</li>`).join("")}</ul>
         </div>
-        <div class="pattern-card__structure">${escapeHtml(item.structure)}</div>
-        <div class="pattern-card__example">
-          <strong>例句</strong>
-          <p>${escapeHtml(item.example)}</p>
-        </div>
-        <ul>${item.tips.map((tip) => `<li>${escapeHtml(tip)}</li>`).join("")}</ul>
-      </article>
+      </details>
     `)
     .join("");
 }
@@ -3233,6 +3249,14 @@ function nowLabel() {
 
 function formatDate(timestamp) {
   return new Date(timestamp).toLocaleString("zh-CN");
+}
+
+function compactText(value, length = 72) {
+  const text = String(value || "").trim().replace(/\s+/g, " ");
+  if (text.length <= length) {
+    return text;
+  }
+  return `${text.slice(0, Math.max(0, length - 1))}…`;
 }
 
 function normalizeBaseUrl(value) {

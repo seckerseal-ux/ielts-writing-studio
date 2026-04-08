@@ -431,11 +431,65 @@ select {
   gap: 12px;
 }
 
+.pattern-card--collapsible {
+  padding: 0;
+  overflow: hidden;
+}
+
+.pattern-card__summary {
+  list-style: none;
+  cursor: pointer;
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.pattern-card__summary::-webkit-details-marker {
+  display: none;
+}
+
 .pattern-card__header {
   display: flex;
   align-items: start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.pattern-card__toggle {
+  flex: none;
+  font-size: 0.86rem;
+  color: var(--brick);
+  font-weight: 700;
+  min-width: 2.6em;
+  text-align: right;
+}
+
+.pattern-card__preview {
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+.pattern-card__body {
+  display: grid;
+  gap: 12px;
+  padding: 0 18px 18px;
+  border-top: 1px solid rgba(31, 42, 56, 0.08);
+}
+
+.pattern-card--collapsible[open] .pattern-card__summary {
+  padding-bottom: 14px;
+}
+
+.pattern-card--collapsible[open] .pattern-card__toggle {
+  color: var(--brick-dark);
+}
+
+.pattern-card--collapsible[open] .pattern-card__toggle::after {
+  content: "收起";
+}
+
+.pattern-card--collapsible:not([open]) .pattern-card__toggle::after {
+  content: "展开";
 }
 
 .pattern-card__structure {
