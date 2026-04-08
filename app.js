@@ -2029,13 +2029,13 @@ function bindEvents() {
     state.selections.paragraphExam = normalizeExam(els.paragraphExamFilter.value);
     populateParagraphSelect();
     els.paragraphSelect.value = state.selections.paragraphId;
-    renderParagraphPrompt();
+    renderParagraphPrompt({ resetResult: true });
     saveState();
   });
 
   els.paragraphSelect.addEventListener("change", () => {
     state.selections.paragraphId = els.paragraphSelect.value;
-    renderParagraphPrompt();
+    renderParagraphPrompt({ resetResult: true });
     saveState();
   });
 
@@ -2043,7 +2043,7 @@ function bindEvents() {
     const pool = getParagraphPromptPool();
     state.selections.paragraphId = randomFrom(pool).id;
     els.paragraphSelect.value = state.selections.paragraphId;
-    renderParagraphPrompt();
+    renderParagraphPrompt({ resetResult: true });
     saveState();
   });
 
@@ -2065,7 +2065,7 @@ function bindEvents() {
     populateEssaySelect();
     els.essayTopicFilter.value = state.selections.essayTopic;
     els.essaySelect.value = state.selections.essayId;
-    renderEssayPrompt();
+    renderEssayPrompt({ resetResult: true });
     renderTimer();
     saveState();
   });
@@ -2078,7 +2078,7 @@ function bindEvents() {
     populateEssaySelect();
     els.essayTopicFilter.value = state.selections.essayTopic;
     els.essaySelect.value = state.selections.essayId;
-    renderEssayPrompt();
+    renderEssayPrompt({ resetResult: true });
     renderTimer();
     saveState();
   });
@@ -2087,13 +2087,13 @@ function bindEvents() {
     state.selections.essayTopic = els.essayTopicFilter.value;
     populateEssaySelect();
     els.essaySelect.value = state.selections.essayId;
-    renderEssayPrompt();
+    renderEssayPrompt({ resetResult: true });
     saveState();
   });
 
   els.essaySelect.addEventListener("change", () => {
     state.selections.essayId = els.essaySelect.value;
-    renderEssayPrompt();
+    renderEssayPrompt({ resetResult: true });
     saveState();
   });
 
@@ -2101,7 +2101,7 @@ function bindEvents() {
     const pool = getEssayPromptPool();
     state.selections.essayId = randomFrom(pool).id;
     els.essaySelect.value = state.selections.essayId;
-    renderEssayPrompt();
+    renderEssayPrompt({ resetResult: true });
     saveState();
   });
 
@@ -2170,6 +2170,8 @@ function handleProfileUpdate() {
   els.blankSelect.value = state.selections.blankId;
   populateParagraphSelect();
   populateEssaySelect();
+  els.paragraphResult.innerHTML = "";
+  els.essayResult.innerHTML = "";
   renderAll();
   saveState();
 }
@@ -2206,6 +2208,8 @@ function handlePreferredExamUpdate() {
   populateEssaySelect();
   els.essaySelect.value = state.selections.essayId;
   resetTimerForTask();
+  els.paragraphResult.innerHTML = "";
+  els.essayResult.innerHTML = "";
   renderAll();
   saveState();
 }
@@ -2429,16 +2433,20 @@ function revealBlankExercise() {
   els.blankResult.innerHTML = "<p>参考答案已显示。把整句再读一遍，下一轮尽量自己复写。</p>";
 }
 
-function renderParagraphPrompt() {
+function renderParagraphPrompt(options = {}) {
+  const { resetResult = false } = options;
   const prompt = currentParagraphPrompt();
   els.paragraphPrompt.innerHTML = renderPromptPanel(prompt, "paragraph");
   if (els.paragraphText) {
     els.paragraphText.placeholder = getParagraphPlaceholder(prompt);
   }
-  els.paragraphResult.innerHTML = "";
+  if (resetResult) {
+    els.paragraphResult.innerHTML = "";
+  }
 }
 
-function renderEssayPrompt() {
+function renderEssayPrompt(options = {}) {
+  const { resetResult = false } = options;
   const prompt = currentEssayPrompt();
   els.essayPrompt.innerHTML = renderPromptPanel(prompt, "essay");
   if (els.customPrompt) {
@@ -2447,7 +2455,9 @@ function renderEssayPrompt() {
   if (els.essayText) {
     els.essayText.placeholder = getEssayPlaceholder(prompt);
   }
-  els.essayResult.innerHTML = "";
+  if (resetResult) {
+    els.essayResult.innerHTML = "";
+  }
 }
 
 function getMinimumWordsForPrompt(prompt, mode) {
