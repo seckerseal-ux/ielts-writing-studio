@@ -1764,6 +1764,7 @@ const els = {
   paragraphText: document.querySelector("#paragraph-text"),
   paragraphWordCount: document.querySelector("#paragraph-word-count"),
   paragraphEvaluate: document.querySelector("#paragraph-evaluate"),
+  paragraphAiEvaluate: document.querySelector("#paragraph-ai-evaluate"),
   paragraphRandom: document.querySelector("#paragraph-random"),
   paragraphResult: document.querySelector("#paragraph-result"),
   essayExamFilter: document.querySelector("#essay-exam-filter"),
@@ -2093,6 +2094,7 @@ function bindEvents() {
   });
 
   els.paragraphEvaluate.addEventListener("click", evaluateParagraph);
+  els.paragraphAiEvaluate?.addEventListener("click", evaluateParagraphAi);
 
   els.essayExamFilter?.addEventListener("change", () => {
     state.selections.essayExam = normalizeExam(els.essayExamFilter.value);
@@ -3051,17 +3053,25 @@ function evaluateEssayLocal() {
   });
 }
 
-function setEssayAiBusy(isBusy, label = "AI 精批") {
-  if (!els.essayAiEvaluate) {
+function setReviewButtonBusy(button, isBusy, label = "AI 精批") {
+  if (!button) {
     return;
   }
-  if (!els.essayAiEvaluate.dataset.defaultLabel) {
-    els.essayAiEvaluate.dataset.defaultLabel = els.essayAiEvaluate.textContent.trim() || "AI 精批";
+  if (!button.dataset.defaultLabel) {
+    button.dataset.defaultLabel = button.textContent.trim() || "AI 精批";
   }
-  els.essayAiEvaluate.disabled = isBusy;
-  els.essayAiEvaluate.textContent = isBusy
+  button.disabled = isBusy;
+  button.textContent = isBusy
     ? label
-    : els.essayAiEvaluate.dataset.defaultLabel;
+    : button.dataset.defaultLabel;
+}
+
+function setEssayAiBusy(isBusy, label = "AI 精批") {
+  setReviewButtonBusy(els.essayAiEvaluate, isBusy, label);
+}
+
+function setParagraphAiBusy(isBusy, label = "AI 精批") {
+  setReviewButtonBusy(els.paragraphAiEvaluate, isBusy, label);
 }
 
 function renderAiPendingEvaluation(backendLabel, payload = {}) {
@@ -3079,10 +3089,15 @@ function renderAiPendingEvaluation(backendLabel, payload = {}) {
   `;
 }
 
-function applyAiEvaluationResult(prompt, localReview, payload) {
-  els.essayResult.innerHTML = "";
-  renderLocalEvaluation(els.essayResult, localReview, { title: prompt.title, modeLabel: "本地快评" });
-  els.essayResult.insertAdjacentHTML("beforeend", renderAiEvaluation(prompt, payload));
+function applyAiEvaluationResult(container, prompt, localReview, payload, meta = {}) {
+  const modeLabel = meta.modeLabel || "本地快评";
+  const title = meta.title || prompt.title;
+  const kind = meta.kind || "essay";
+  const shouldArchive = meta.archive === true;
+
+  container.innerHTML = "";
+  renderLocalEvaluation(container, localReview, { title, modeLabel });
+  container.insertAdjacentHTML("beforeend", renderAiEvaluation(prompt, payload));
   updateCorpusFromReview(prompt, localReview, payload.review || null);
   const aiBreakdown = {
     taskResponse: Number(payload.review?.band_breakdown?.task_response || 0),
@@ -3092,7 +3107,7 @@ function applyAiEvaluationResult(prompt, localReview, payload) {
   };
   const scoreView = getScorePresentation(prompt, Number(payload.review?.overall_band || localReview.overallBand), aiBreakdown);
   pushHistory({
-    kind: "essay",
+    kind,
     exam: getPromptExam(prompt),
     task: prompt.task,
     title: `${prompt.title} · AI`,
@@ -3108,15 +3123,17 @@ function applyAiEvaluationResult(prompt, localReview, payload) {
     summary: payload.review?.summary || localReview.summary,
     source: "ai",
   });
-  state.aiArchive.unshift({
-    timestamp: Date.now(),
-    title: prompt.title,
-    exam: getPromptExam(prompt),
-    task: prompt.task,
-    band: Number(payload.review?.overall_band || 0),
-    keyIssue: payload.review?.key_issues?.[0] || payload.review?.summary || "",
-  });
-  state.aiArchive = state.aiArchive.slice(0, 12);
+  if (shouldArchive) {
+    state.aiArchive.unshift({
+      timestamp: Date.now(),
+      title: prompt.title,
+      exam: getPromptExam(prompt),
+      task: prompt.task,
+      band: Number(payload.review?.overall_band || 0),
+      keyIssue: payload.review?.key_issues?.[0] || payload.review?.summary || "",
+    });
+    state.aiArchive = state.aiArchive.slice(0, 12);
+  }
   saveState();
   renderStats();
   renderHistory();
@@ -3233,9 +3250,19 @@ async function evaluateEssayAi() {
       els.essayResult.insertAdjacentHTML("beforeend", renderAiPendingEvaluation(payload.provider_label || backendStatus.label, payload));
       setEssayAiBusy(true, "AI 精批后台处理中…");
       const finalPayload = await pollAiReviewJob(payload.job_id);
-      applyAiEvaluationResult(prompt, localReview, finalPayload);
+      applyAiEvaluationResult(els.essayResult, prompt, localReview, finalPayload, {
+        title: prompt.title,
+        modeLabel: "本地快评",
+        kind: "essay",
+        archive: true,
+      });
     } else {
-      applyAiEvaluationResult(prompt, localReview, payload);
+      applyAiEvaluationResult(els.essayResult, prompt, localReview, payload, {
+        title: prompt.title,
+        modeLabel: "本地快评",
+        kind: "essay",
+        archive: true,
+      });
     }
   } catch (error) {
     const message = String(error.message || "AI 服务暂时无法处理这篇作文。当前已保留本地快评结果。");
@@ -3250,6 +3277,111 @@ async function evaluateEssayAi() {
     `);
   } finally {
     setEssayAiBusy(false);
+  }
+}
+
+async function evaluateParagraphAi() {
+  const text = els.paragraphText.value.trim();
+  if (!text) {
+    els.paragraphResult.innerHTML = "<p>先写一个段落，再让 AI 下场挑刺。</p>";
+    return;
+  }
+
+  const selectedBackend = getSelectedAiBackend();
+  const backendStatus = getSelectedAiBackendStatus();
+  const fallbackBackend = getAvailableAiBackendIds().find((id) => id !== selectedBackend);
+
+  if (!backendStatus.available) {
+    const fallbackText = fallbackBackend
+      ? `当前可用的是 ${AI_BACKEND_OPTIONS[fallbackBackend].label}，你也可以先切过去再批改。`
+      : "你也可以先点“本地快评”，先看结构和表达问题。";
+    els.paragraphResult.innerHTML = `
+      <div class="feedback feedback--warning">
+        <strong>当前选择的 AI 后端还没有连接上</strong>
+        <p>段落精批和整篇精批共用同一套 AI 后端配置。${fallbackText}</p>
+      </div>
+    `;
+    return;
+  }
+
+  const prompt = currentParagraphPrompt();
+  const localReview = evaluateWriting(text, prompt, "paragraph");
+  renderLocalEvaluation(els.paragraphResult, localReview, { title: prompt.title, modeLabel: "段落练习" });
+  els.paragraphResult.insertAdjacentHTML("beforeend", `
+    <div class="analysis-shell">
+      <h3>AI 精批进行中</h3>
+      <p>我会把题目、段落和本地结构信号一起发给 ${escapeHtml(backendStatus.label)}，让它专盯这一段的逻辑、语法和表达自然度。</p>
+    </div>
+  `);
+
+  try {
+    setParagraphAiBusy(true, "AI 精批提交中…");
+    const response = await fetch("/api/ai/writing-review", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        backend: selectedBackend,
+        device_id: getCloudDeviceId(),
+        prompt_payload: prompt,
+        essay_text: text,
+        target_band: getReviewTargetDescriptor(prompt),
+        local_metrics: {
+          words: localReview.words,
+          sentences: localReview.sentences,
+          paragraphs: localReview.paragraphs,
+          keywordCoverage: localReview.keywordCoverage,
+          connectorCount: localReview.connectorCount,
+          overallBand: localReview.overallBand,
+          breakdown: localReview.breakdown,
+          signals: localReview.signals,
+          grammarIssues: localReview.languageReview?.grammarIssues || [],
+          lexicalIssues: localReview.languageReview?.lexicalIssues || [],
+          idiomIssues: localReview.languageReview?.idiomIssues || [],
+          polishedVersion: localReview.polishedVersion,
+          reviewMode: "paragraph",
+        },
+      }),
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || "AI 段落精批服务暂时不可用。");
+    }
+
+    if (payload.async && payload.job_id) {
+      els.paragraphResult.innerHTML = "";
+      renderLocalEvaluation(els.paragraphResult, localReview, { title: prompt.title, modeLabel: "段落练习" });
+      els.paragraphResult.insertAdjacentHTML("beforeend", renderAiPendingEvaluation(payload.provider_label || backendStatus.label, payload));
+      setParagraphAiBusy(true, "AI 精批后台处理中…");
+      const finalPayload = await pollAiReviewJob(payload.job_id);
+      applyAiEvaluationResult(els.paragraphResult, prompt, localReview, finalPayload, {
+        title: prompt.title,
+        modeLabel: "段落练习",
+        kind: "paragraph",
+      });
+    } else {
+      applyAiEvaluationResult(els.paragraphResult, prompt, localReview, payload, {
+        title: prompt.title,
+        modeLabel: "段落练习",
+        kind: "paragraph",
+      });
+    }
+  } catch (error) {
+    const message = String(error.message || "AI 服务暂时无法处理这段文字。当前已保留本地快评结果。");
+    const friendlyMessage = /free-models-per-day|今日请求额度已经用完|解锁更多免费请求/i.test(message)
+      ? "OpenRouter 免费模型今天的额度已经用完了，所以在线 AI 段落精批暂时不能继续使用。你可以先用本地快评，等额度重置后再试。"
+      : message;
+    els.paragraphResult.insertAdjacentHTML("beforeend", `
+      <div class="feedback feedback--danger">
+        <strong>AI 段落精批失败</strong>
+        <p>${escapeHtml(friendlyMessage)}</p>
+      </div>
+    `);
+  } finally {
+    setParagraphAiBusy(false);
   }
 }
 

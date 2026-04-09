@@ -287,7 +287,10 @@
           ></textarea>
           <div class="writing-toolbar">
             <span class="word-counter" id="paragraph-word-count">0 词</span>
-            <button class="button button--primary" id="paragraph-evaluate" type="button">评分并反馈</button>
+            <div class="inline-controls">
+              <button class="button button--ghost" id="paragraph-evaluate" type="button">本地快评</button>
+              <button class="button button--primary" id="paragraph-ai-evaluate" type="button">AI 精批</button>
+            </div>
           </div>
           <div class="result-panel" id="paragraph-result"></div>
         </section>
