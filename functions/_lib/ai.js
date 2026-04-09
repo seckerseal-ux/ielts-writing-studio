@@ -109,6 +109,9 @@ For IELTS Task 1, treat the first criterion as Task Achievement and be strict ab
 For IELTS Task 2, treat the first criterion as Task Response and be strict about fully answering the question and supporting ideas.
 For IELTS Task 2 prompts that explicitly ask for a position, judge how clear and consistent that position is.
 For IELTS Task 2 double-question or problem-solution prompts, do not require a personal opinion unless the prompt explicitly asks for one.
+For IELTS Task 2 body paragraphs, actively judge whether the logic develops from claim to reason to result/example instead of stopping at abstract labels.
+When checking IELTS Task 2 examples, prefer concrete scenarios with people, actions, or situations over vague support such as "improve mental health" or "enhance development".
+When checking IELTS Task 2 body paragraphs, comment on whether sentence length is controlled well enough for the logic to stay clear.
 When exam=kaoyan and task=small, focus on task fulfilment, register, format, clarity, completeness, and whether the piece reads like a real English email/notice/letter.
 When exam=kaoyan and task=large, focus on content development, picture/chart interpretation, commentary depth, logic, and natural English expression.
 Do not invent mistakes that are not visible in the essay.
@@ -512,7 +515,8 @@ function getExamReviewProfile(promptPayload) {
       focuses: [
         "是否把两个问题都直接回答到了",
         "两问是否都分到了足够篇幅，而不是只重点写一问",
-        "每一问是否有解释、结果或例子展开",
+        "每一问是否有解释、结果或具体例子展开",
+        "主体段句子长短是否稳，例子是否具体到场景和人群",
         "表达是否自然、书面且符合英文习惯",
       ],
       phraseLine: "给出适合这道双问题题继续套用的 IELTS Task 2 表达。",
@@ -530,6 +534,7 @@ function getExamReviewProfile(promptPayload) {
         "是否把问题和解决都回应到了",
         "问题是否足够具体，而不是泛泛而谈",
         "解决方案是否可执行、和问题真正对应",
+        "主体段句子长短是否稳，例子是否具体到场景和人群",
         "表达是否自然、书面且符合英文习惯",
       ],
       phraseLine: "给出适合这道问题解决题继续套用的 IELTS Task 2 表达。",
@@ -545,7 +550,8 @@ function getExamReviewProfile(promptPayload) {
     focuses: [
       "是否真正回答题目",
       "立场是否清楚稳定",
-      "论证是否展开，并有必要的例子或解释",
+      "论证是否展开，并有必要的具体例子或解释",
+      "主体段句子长短是否稳，例子是否具体到场景和人群",
       "表达是否自然、书面且符合英文习惯",
     ],
     phraseLine: "给出适合这道题继续套用的 IELTS Task 2 表达。",

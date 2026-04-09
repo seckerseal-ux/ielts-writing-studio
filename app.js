@@ -1825,6 +1825,7 @@ const defaultState = {
     lexicalUpgrades: [],
     grammarWatchlist: [],
     idiomWatchlist: [],
+    exampleBank: [],
     polishedSnippets: [],
   },
 };
@@ -1947,6 +1948,7 @@ function normalizeCorpusState(payload) {
     lexicalUpgrades: Array.isArray(source.lexicalUpgrades) ? source.lexicalUpgrades.slice(0, 12) : [],
     grammarWatchlist: Array.isArray(source.grammarWatchlist) ? source.grammarWatchlist.slice(0, 12) : [],
     idiomWatchlist: Array.isArray(source.idiomWatchlist) ? source.idiomWatchlist.slice(0, 12) : [],
+    exampleBank: Array.isArray(source.exampleBank) ? source.exampleBank.slice(0, 12) : [],
     polishedSnippets: Array.isArray(source.polishedSnippets) ? source.polishedSnippets.slice(0, 12) : [],
   };
 }
@@ -3531,6 +3533,7 @@ async function evaluateParagraphAi() {
 function renderLocalEvaluation(container, result, meta) {
   const promptMeta = result.promptMeta || { exam: result.exam, task: result.task };
   const exam = getPromptExam(promptMeta);
+  const showBodyLogicReview = exam === "ielts" && promptMeta.task === "task2" && meta.modeLabel === "整篇快评";
   const scoreView = getScorePresentation(promptMeta, result.overallBand, result.breakdown);
   const criterionLabel = getCriterionLabel(promptMeta);
   const metricCards = [
@@ -3556,6 +3559,10 @@ function renderLocalEvaluation(container, result, meta) {
     ...(result.studyPack?.recommendedPatterns || []),
     ...(result.studyPack?.lexicalUpgrades || []),
   ].slice(0, 6).map((item) => `<span class="tag">${escapeHtml(item)}</span>`).join("");
+  const exampleSnippetMarkup = (result.studyPack?.exampleSnippets || [])
+    .slice(0, 2)
+    .map((item) => `<li>${escapeHtml(item)}</li>`)
+    .join("");
 
   container.innerHTML = `
     <h3>${escapeHtml(meta.modeLabel)}</h3>
@@ -3601,6 +3608,12 @@ function renderLocalEvaluation(container, result, meta) {
         <h3>英文习惯表达</h3>
         <ul>${renderIssueItems(result.languageReview?.idiomIssues || [])}</ul>
       </article>
+      ${showBodyLogicReview ? `
+        <article class="language-card">
+          <h3>主体段逻辑</h3>
+          <ul>${renderIssueItems(result.languageReview?.bodyLogicIssues || [])}</ul>
+        </article>
+      ` : ""}
     </div>
     <div class="compare-grid">
       <article class="compare-card">
@@ -3615,6 +3628,7 @@ function renderLocalEvaluation(container, result, meta) {
     <div class="material-card">
       <h3>本次建议加入你的语料库</h3>
       ${studyPackMarkup ? `<div class="tag-row">${studyPackMarkup}</div>` : "<p>这次先以结构和表达修正为主，下一轮会逐步累积更适合你的句型。</p>"}
+      ${exampleSnippetMarkup ? `<div class="material-strip"><strong>这次值得留下的例句</strong><ul>${exampleSnippetMarkup}</ul></div>` : ""}
     </div>
   `;
 }
@@ -3758,11 +3772,112 @@ function dedupeIssues(items) {
   });
 }
 
+function getTask2BodyParagraphs(paragraphs) {
+  if (!Array.isArray(paragraphs) || !paragraphs.length) {
+    return [];
+  }
+  if (paragraphs.length >= 4) {
+    return paragraphs.slice(1, -1);
+  }
+  if (paragraphs.length === 3) {
+    return paragraphs.slice(1, 2);
+  }
+  if (paragraphs.length === 2) {
+    return paragraphs.slice(1);
+  }
+  return paragraphs;
+}
+
+function isLikelyConcreteExampleSentence(sentence) {
+  const text = String(sentence || "").trim();
+  if (!text) {
+    return false;
+  }
+  return /\b(for example|for instance|such as|including|a clear example of this|one clear example|during|when|while|in schools|at school|at home|in many families|for working parents|for children|for students|in cities|in the workplace)\b/i.test(text);
+}
+
+function isLikelyAbstractSupportSentence(sentence) {
+  const text = String(sentence || "").trim();
+  if (!text) {
+    return false;
+  }
+  const abstractHits = (text.match(/\b(improve|strengthen|enhance|benefit|promote|support|development|relationship|ability|skill|health|wellbeing|growth|quality)\b/gi) || []).length;
+  const concreteHits = (text.match(/\b(children|students|parents|teachers|workers|families|schools|cities|companies|at home|at school|during|when|for example|for instance|such as|including)\b/gi) || []).length;
+  return abstractHits >= 2 && concreteHits === 0;
+}
+
+function collectTask2BodyLogicIssues(paragraphs) {
+  const bodyParagraphs = getTask2BodyParagraphs(paragraphs);
+  if (!bodyParagraphs.length) {
+    return [];
+  }
+
+  const bodySentences = bodyParagraphs.flatMap((paragraph) => splitEssaySentences(paragraph).map((sentence) => sentence.trim()).filter(Boolean));
+  if (!bodySentences.length) {
+    return [];
+  }
+
+  const issues = [];
+  const sentenceLengths = bodySentences.map((sentence) => countEssayWords(sentence));
+  const longestSentence = Math.max(...sentenceLengths);
+  const shortestMeaningfulSentence = Math.min(...sentenceLengths.filter((length) => length > 0));
+  const overlyLongSentence = bodySentences.find((sentence) => countEssayWords(sentence) >= 35);
+  const overlyShortSentences = bodySentences.filter((sentence) => countEssayWords(sentence) > 0 && countEssayWords(sentence) <= 6);
+  const abstractSentence = bodySentences.find((sentence) => isLikelyAbstractSupportSentence(sentence));
+  const concreteExamples = bodySentences.filter((sentence) => isLikelyConcreteExampleSentence(sentence));
+  const exampleMarkers = bodySentences.filter((sentence) => /\b(for example|for instance|a clear example of this|such as|including)\b/i.test(sentence));
+  const genericExampleSentence = exampleMarkers.find((sentence) => isLikelyAbstractSupportSentence(sentence));
+
+  if (overlyLongSentence) {
+    issues.push({
+      label: "主体段句子太长",
+      evidence: `${longestSentence} 词左右的长句：${overlyLongSentence}`,
+      suggestion: "把长句拆成“主张句 + 原因句/结果句”，让读者别在半路缺氧",
+      reason: "主体段长句太长时，逻辑会被埋住，例子也容易糊成一团。",
+    });
+  } else if (overlyShortSentences.length >= 2 || shortestMeaningfulSentence <= 4) {
+    issues.push({
+      label: "主体段句子太碎",
+      evidence: overlyShortSentences.slice(0, 2).join(" / ") || `最短句大约 ${shortestMeaningfulSentence} 词`,
+      suggestion: "把过短句和前后句并起来，至少补出原因、结果或限定条件",
+      reason: "主体段如果全是短促小句，读起来会像提纲，不像已经展开的论证。",
+    });
+  }
+
+  if (!concreteExamples.length && abstractSentence) {
+    issues.push({
+      label: "例子偏抽象",
+      evidence: abstractSentence,
+      suggestion: "把 benefit 写成具体场景，比如 who does what, in which situation, and what happens next",
+      reason: "像 improve mental health 这种抽象好处太像提纲，缺少真实场景时说服力会打折。",
+    });
+  } else if (genericExampleSentence) {
+    issues.push({
+      label: "举例不够落地",
+      evidence: genericExampleSentence,
+      suggestion: "例句里最好补上人群、动作和场景，比如 during a long break / for working parents / in many schools",
+      reason: "有 example 连接词还不够，真正能撑住主体段的是具体场景，而不是抽象收益清单。",
+    });
+  }
+
+  return dedupeIssues(issues).slice(0, 3);
+}
+
+function extractExampleSnippets(text) {
+  return splitEssaySentences(text)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence && isLikelyConcreteExampleSentence(sentence))
+    .slice(0, 4);
+}
+
 function buildLanguageReview(text, prompt, mode, sentences, fragmentCount) {
   const promptMeta = normalizePromptDefinition(prompt);
   const grammarIssues = collectRuleIssues(text, GRAMMAR_RULES, 4);
   const lexicalIssues = collectRuleIssues(text, LEXICAL_RULES, 4);
   const idiomIssues = collectRuleIssues(text, IDIOM_RULES, 4);
+  const bodyLogicIssues = mode === "essay" && getPromptExam(promptMeta) === "ielts" && promptMeta.task === "task2"
+    ? collectTask2BodyLogicIssues(splitEssayParagraphs(text))
+    : [];
 
   if (fragmentCount) {
     grammarIssues.push({
@@ -3843,6 +3958,7 @@ function buildLanguageReview(text, prompt, mode, sentences, fragmentCount) {
     grammarIssues: dedupeIssues(grammarIssues).slice(0, 4),
     lexicalIssues: dedupeIssues(lexicalIssues).slice(0, 4),
     idiomIssues: dedupeIssues(idiomIssues).slice(0, 4),
+    bodyLogicIssues,
   };
 }
 
@@ -3992,11 +4108,15 @@ function buildStudyPack(prompt, languageReview, polishedVersion, originalText) {
 
   const grammarWatch = languageReview.grammarIssues.slice(0, 4).map((item) => `${item.label}：${item.reason}`);
   const changedSentences = extractChangedSentences(originalText, polishedVersion);
+  const exampleSnippets = extractExampleSnippets(polishedVersion).length
+    ? extractExampleSnippets(polishedVersion)
+    : extractExampleSnippets(originalText);
 
   return {
     recommendedPatterns,
     lexicalUpgrades,
     grammarWatch,
+    exampleSnippets,
     polishedSnippets: changedSentences,
   };
 }
@@ -4054,6 +4174,14 @@ function updateCorpusFromReview(prompt, result, aiReview = null) {
     result.languageReview.idiomIssues.map((item) => `${item.evidence} -> ${String(item.suggestion).split(" / ")[0]}`),
   );
 
+  state.corpus.exampleBank = mergeCorpusEntries(
+    state.corpus.exampleBank,
+    [
+      ...(result.studyPack?.exampleSnippets || []),
+      ...((aiReview?.sentence_upgrades || []).map((item) => item.better_version).filter((sentence) => isLikelyConcreteExampleSentence(sentence))),
+    ],
+  );
+
   state.corpus.polishedSnippets = mergeCorpusEntries(
     state.corpus.polishedSnippets,
     [
@@ -4070,6 +4198,7 @@ function renderCorpus() {
     { title: "高频词汇升级", items: corpus.lexicalUpgrades, empty: "每次练习里被替换得最多的词和短语会累积在这里。" },
     { title: "当前要盯住的语法问题", items: corpus.grammarWatchlist, empty: "这里会积累你最常重复出现的语法风险点。" },
     { title: "更像英文习惯的表达", items: corpus.idiomWatchlist, empty: "不太自然的表达和更顺的替换说法会慢慢沉淀在这里。" },
+    { title: "例子积累", items: corpus.exampleBank, empty: "以后这里会专门留下那种能把抽象观点砸回具体场景里的例句。" },
     { title: "值得背下来的润色句", items: corpus.polishedSnippets, empty: "每次改写里更成熟的句子会保留在这里，方便你回看。" },
   ];
 
@@ -4367,6 +4496,11 @@ function evaluateWriting(text, prompt, mode) {
   const summary = buildPerformanceSummary(promptMeta, overallBand, { taskResponse, coherence, lexical, grammar });
 
   const languageReview = buildLanguageReview(text, prompt, mode, sentences, fragmentCount);
+  const leadBodyLogicIssue = languageReview.bodyLogicIssues?.[0];
+  if (leadBodyLogicIssue && !keyIssues.some((item) => item.includes(leadBodyLogicIssue.label))) {
+    keyIssues.push(`${leadBodyLogicIssue.label}：${leadBodyLogicIssue.reason}`);
+    improvementActions.push(leadBodyLogicIssue.suggestion);
+  }
   const polishedVersion = buildPolishedVersion(text, prompt);
   const comparison = buildDiffComparison(text, polishedVersion);
   const studyPack = buildStudyPack(prompt, languageReview, polishedVersion, text);

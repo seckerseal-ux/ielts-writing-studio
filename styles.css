@@ -930,6 +930,12 @@ select {
   gap: 12px;
 }
 
+.material-strip ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ink-soft);
+}
+
 .compare-grid {
   display: grid;
   gap: 14px;
@@ -968,7 +974,7 @@ select {
   display: grid;
   gap: 16px;
   margin-top: 16px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .language-card {
