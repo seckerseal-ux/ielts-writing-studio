@@ -707,6 +707,19 @@ const paragraphPrompts = [
     categories: ["结尾收束", "健康与生活", "观点表达"],
   },
   {
+    id: "para12",
+    task: "task2",
+    type: "body",
+    title: "Task 2 主体段：双问题题",
+    prompt: "In many countries, primary and secondary schools close for two months or more in the summer holidays. What is the value of long school holidays? What are the arguments in favour of shorter school holidays?",
+    source: "Cambridge-style 改写题",
+    notes: ["第一问可写休息、家庭时间、兴趣发展", "第二问可写学习连续性、减少遗忘、家长照料压力"],
+    targetWords: [95, 145],
+    checklist: ["最好一问一段，不要把两个问题混着讲", "每一问至少展开一层原因", "这类题不必强行给个人立场"],
+    keywords: ["schools", "summer holidays", "value", "shorter", "school holidays", "arguments"],
+    categories: ["主体展开", "教育话题", "双问题"],
+  },
+  {
     id: "paraK1",
     exam: "kaoyan",
     task: "small",
@@ -1118,6 +1131,20 @@ const essayPrompts = [
     topics: ["科技", "教育", "儿童"],
   },
   {
+    id: "essay27",
+    task: "task2",
+    title: "教育：暑假太长还是太短",
+    genre: "double question",
+    source: "Cambridge-style 改写题",
+    prompt: "In many countries, primary and secondary schools close for two months or more in the summer holidays. What is the value of long school holidays? What are the arguments in favour of shorter school holidays?",
+    details: ["第一问可写休息、家庭陪伴、兴趣发展", "第二问可写学习连续性、减少遗忘、方便家长安排", "两问都要答，不要求强行表态"],
+    requirements: ["至少 250 词", "两问都要直接回应", "最好一问一段，别把回答搅成一锅"],
+    keywords: ["primary", "secondary", "schools", "summer holidays", "value", "shorter school holidays"],
+    categories: ["主体展开", "教育话题", "双问题"],
+    minimumWords: 250,
+    topics: ["教育", "校园"],
+  },
+  {
     id: "essayK1",
     exam: "kaoyan",
     task: "small",
@@ -1388,6 +1415,17 @@ const TASK2_GUIDANCE_BANK = {
       "反面可写新员工在完全远程环境下更难获得即时指导和团队归属感。",
     ],
   },
+  schoolHolidaysDoubleQuestion: {
+    topics: ["教育", "校园"],
+    ideaHints: [
+      "双问题题最稳的结构是一问一段：先写 long school holidays 的价值，再写支持 shorter holidays 的理由。",
+      "这题不用强行表忠心，重点是两个问题都答到，而且每一问都要有展开而不是只丢一句态度。",
+    ],
+    exampleIdeas: [
+      "例如，长假可以让学生休息、参加家庭活动或发展课堂外兴趣，这些都属于 long-term personal growth。",
+      "支持 shorter holidays 时，可以写 learning continuity, reduced forgetting, and easier childcare arrangements for working parents。",
+    ],
+  },
 };
 
 const ESSAY_PROMPT_ENHANCEMENTS = {
@@ -1411,6 +1449,7 @@ const ESSAY_PROMPT_ENHANCEMENTS = {
   essay18: TASK2_GUIDANCE_BANK.tourismCulture,
   essay19: TASK2_GUIDANCE_BANK.artsVsSports,
   essay20: TASK2_GUIDANCE_BANK.publicSpaces,
+  essay27: TASK2_GUIDANCE_BANK.schoolHolidaysDoubleQuestion,
 };
 
 const PARAGRAPH_PROMPT_ENHANCEMENTS = {
@@ -1420,6 +1459,7 @@ const PARAGRAPH_PROMPT_ENHANCEMENTS = {
   para9: TASK2_GUIDANCE_BANK.environmentDuty,
   para10: TASK2_GUIDANCE_BANK.housingPressure,
   para11: TASK2_GUIDANCE_BANK.sugaryDrinksTax,
+  para12: TASK2_GUIDANCE_BANK.schoolHolidaysDoubleQuestion,
 };
 
 applyPromptEnhancements(essayPrompts, ESSAY_PROMPT_ENHANCEMENTS);
@@ -1435,7 +1475,89 @@ function applyPromptEnhancements(collection, enhancementMap) {
   });
 }
 
+function normalizeTask2GenreLabel(genre) {
+  const normalized = String(genre || "").trim().toLowerCase();
+  if (normalized === "agree or disagree") return "agree or disagree";
+  if (normalized === "discuss both views") return "discuss both views";
+  if (normalized === "advantages disadvantages") return "advantages disadvantages";
+  if (normalized === "problem and solution") return "problem and solution";
+  if (normalized === "double question") return "double question";
+  return "";
+}
+
+function getTask2GenreDisplayName(genre) {
+  const normalized = normalizeTask2GenreLabel(genre);
+  if (normalized === "agree or disagree") return "同意与否";
+  if (normalized === "discuss both views") return "讨论双方观点";
+  if (normalized === "advantages disadvantages") return "利弊分析";
+  if (normalized === "problem and solution") return "问题解决";
+  if (normalized === "double question") return "双问题";
+  return "Task 2";
+}
+
+function inferIeltsTask2GenreFromPromptText(text) {
+  const promptText = String(text || "").trim();
+  const normalized = promptText.toLowerCase();
+
+  if (!promptText) {
+    return "";
+  }
+  if (/discuss both views/i.test(promptText)) {
+    return "discuss both views";
+  }
+  if (/to what extent do you agree or disagree|do you agree or disagree/i.test(promptText)) {
+    return "agree or disagree";
+  }
+  if (/advantages?.*disadvantages?|outweigh the disadvantages?/i.test(promptText)) {
+    return "advantages disadvantages";
+  }
+  if (/what problems?.*what solutions?|what problems?.*what measures?|causes this problem.*what can be done/i.test(normalized)) {
+    return "problem and solution";
+  }
+  const questionMarks = (promptText.match(/\?/g) || []).length;
+  const whQuestions = (promptText.match(/\b(what|why|how|who|where|when|which)\b/gi) || []).length;
+  if (questionMarks >= 2 && whQuestions >= 2) {
+    return "double question";
+  }
+  return "";
+}
+
+function getIeltsTask2Genre(prompt) {
+  const normalizedPrompt = normalizePromptDefinition(prompt);
+  if (getPromptExam(normalizedPrompt) !== "ielts" || normalizedPrompt.task !== "task2") {
+    return "";
+  }
+  return normalizeTask2GenreLabel(normalizedPrompt.genre) || inferIeltsTask2GenreFromPromptText(normalizedPrompt.prompt);
+}
+
+function task2NeedsOpinion(prompt) {
+  return ["agree or disagree", "discuss both views", "advantages disadvantages"].includes(getIeltsTask2Genre(prompt));
+}
+
+function task2NeedsDualCoverage(prompt) {
+  return ["double question", "problem and solution"].includes(getIeltsTask2Genre(prompt));
+}
+
+function getPromptQuestionCoverage(promptText, normalizedEssayText) {
+  const questions = String(promptText || "")
+    .match(/[^?]+\?/g);
+  if (!questions?.length) {
+    return [];
+  }
+
+  return questions
+    .map((question) => {
+      const keywords = extractPromptKeywords(question).slice(0, 5);
+      if (!keywords.length) {
+        return 100;
+      }
+      const hits = keywords.filter((keyword) => normalizedEssayText.includes(` ${keyword.toLowerCase()} `));
+      return Math.round((hits.length / keywords.length) * 100);
+    });
+}
+
 function buildGenericTask2Guidance(prompt) {
+  const genre = getIeltsTask2Genre(prompt);
   const topicHints = {
     教育: "教育题通常很稳的写法是：先写 learning outcome，再写 long-term personal development。",
     科技: "科技题别只写方便，最好比较 efficiency 和 what technology still cannot replace。",
@@ -1455,10 +1577,15 @@ function buildGenericTask2Guidance(prompt) {
   };
 
   const matchedHints = (prompt.topics || []).map((topic) => topicHints[topic]).filter(Boolean);
-  const genericIdeas = [
-    "主体段尽量遵循：主论点 -> 原因 -> 结果 -> 例子，这样会更像完整论证。",
-    "如果是 discuss both views 或 advantages/disadvantages，最后一定要用一两句把你的判断写清楚。",
-  ];
+  const genericIdeas = genre === "double question"
+    ? [
+      "双问题最稳的写法通常是一问一段，别把两问搅成一锅粥再端上去。",
+      "这类题不一定要强行站队，重点是两个问题都要正面回应，而且每一问都得有展开。",
+    ]
+    : [
+      "主体段尽量遵循：主论点 -> 原因 -> 结果 -> 例子，这样会更像完整论证。",
+      "如果是 discuss both views 或 advantages/disadvantages，最后一定要用一两句把你的判断写清楚。",
+    ];
   const genericExamples = [
     "举例时不用追求真实数据，但最好写出具体场景、受影响的人群和结果。",
     "如果想让例子更自然，可以写城市、学校、公司或家庭这些读者容易想象的场景。",
@@ -2694,6 +2821,22 @@ function getReviewTargetDescriptor(prompt) {
     return `${getLevelOptionLabel("kaoyan", state.profile.targetBand)}（参考卷面 ${targetView.compactText}）`;
   }
   return String(state.profile.targetBand || "");
+}
+
+function getCustomTask2Requirements(genre) {
+  if (genre === "double question") {
+    return ["至少 250 词", "两个问题都要回应", "最好一问一段，不必强行亮个人立场"];
+  }
+  if (genre === "problem and solution") {
+    return ["至少 250 词", "问题和解决都要覆盖", "solution 要具体，不要只喊口号"];
+  }
+  if (genre === "advantages disadvantages") {
+    return ["至少 250 词", "优缺点都要展开", "最后要说明哪一边更重"];
+  }
+  if (genre === "discuss both views") {
+    return ["至少 250 词", "两边观点都要写到", "最后要明确自己的看法"];
+  }
+  return ["至少 250 词", "立场要稳定清楚", "每段围绕一个主论点展开"];
 }
 
 function describeKaoyanMetric(metric, score, prompt) {
@@ -3995,6 +4138,12 @@ function evaluateWriting(text, prompt, mode) {
   const isIeltsTask2 = exam === "ielts" && task === "task2";
   const isKaoyanSmall = exam === "kaoyan" && task === "small";
   const isKaoyanLarge = exam === "kaoyan" && task === "large";
+  const task2Genre = isIeltsTask2 ? getIeltsTask2Genre(promptMeta) : "";
+  const requiresOpinion = isIeltsTask2 && task2NeedsOpinion(promptMeta);
+  const requiresDualCoverage = isIeltsTask2 && task2NeedsDualCoverage(promptMeta);
+  const questionCoverage = requiresDualCoverage ? getPromptQuestionCoverage(promptMeta.prompt || "", normalized) : [];
+  const coveredQuestionCount = questionCoverage.filter((score) => score >= 35).length;
+  const weakQuestionCount = questionCoverage.filter((score) => score < 20).length;
 
   let taskResponse = 5;
   if (words >= targetWords) {
@@ -4025,10 +4174,21 @@ function evaluateWriting(text, prompt, mode) {
       taskResponse -= 0.8;
     }
   } else if (isIeltsTask2) {
-    if (hasOpinion) {
-      taskResponse += 0.5;
-    } else {
-      taskResponse -= 0.4;
+    if (requiresOpinion) {
+      if (hasOpinion) {
+        taskResponse += 0.5;
+      } else {
+        taskResponse -= 0.4;
+      }
+    }
+    if (requiresDualCoverage && questionCoverage.length) {
+      if (coveredQuestionCount === questionCoverage.length) {
+        taskResponse += 0.4;
+      } else if (coveredQuestionCount === 0) {
+        taskResponse -= 0.5;
+      } else {
+        taskResponse -= 0.2;
+      }
     }
     if (mode === "essay" && hasConclusion) {
       taskResponse += 0.4;
@@ -4143,6 +4303,10 @@ function evaluateWriting(text, prompt, mode) {
       strengths.push("写作目的比较清楚，应用文的语气和任务意识已经出来了。");
     } else if (isKaoyanLarge) {
       strengths.push("大作文主线比较清楚，已经开始把图表/图画和观点拉到一起。");
+    } else if (task2Genre === "double question") {
+      strengths.push("两个问题都基本回应到了，主体主线也比较清楚。");
+    } else if (task2Genre === "problem and solution") {
+      strengths.push("问题和解决方向都基本照顾到了，没有只写半边。");
     } else {
       strengths.push("题目回应较完整，立场和主线基本清楚。");
     }
@@ -4159,9 +4323,18 @@ function evaluateWriting(text, prompt, mode) {
     keyIssues.push("Task 1 缺少清晰的 overview。");
     improvementActions.push("用 Overall / It is clear that 先概括最大趋势，再去分组写细节。");
   }
-  if (isIeltsTask2 && !hasOpinion) {
+  if (isIeltsTask2 && requiresOpinion && !hasOpinion) {
     keyIssues.push("Task 2 立场还不够显眼。");
     improvementActions.push("把 In my view / I would argue that 放进引言或第一主体段。");
+  }
+  if (isIeltsTask2 && requiresDualCoverage && questionCoverage.length && (coveredQuestionCount < questionCoverage.length || weakQuestionCount > 0)) {
+    if (task2Genre === "double question") {
+      keyIssues.push("双问题里至少有一问回应得还不够实。");
+      improvementActions.push("最稳的写法是一问一段，先把第一问答满，再单独展开第二问。");
+    } else {
+      keyIssues.push("题目要求的两部分还没有都展开到位。");
+      improvementActions.push("把题干拆成两件事分别回应，不要只在一段里顺手提一下。");
+    }
   }
   if (mode === "essay" && isIeltsTask2 && !hasConclusion) {
     keyIssues.push("整篇作文还缺一个真正收束的结尾。");
@@ -4326,23 +4499,30 @@ function activeEssayPrompt() {
   }
   const normalizedExam = normalizeExam(state.selections.essayExam);
   const minimumWords = getMinimumWordsForPrompt({ exam: normalizedExam, task: state.selections.essayTask }, "essay");
+  const inferredGenre = normalizedExam === "ielts" && state.selections.essayTask === "task2"
+    ? inferIeltsTask2GenreFromPromptText(customPrompt)
+    : "";
   const requirements = normalizedExam === "kaoyan"
     ? state.selections.essayTask === "small"
       ? ["至少 100 词", "格式别散架", "把写作目的和语气交代清楚"]
       : ["至少 160 词", "先点题再展开", "别让观点在半路散掉"]
     : state.selections.essayTask === "task1"
       ? ["至少 150 词", "写出 overview", "优先概括主趋势和关键对比"]
-      : ["至少 250 词", "立场要稳定清楚", "每段围绕一个主论点展开"];
+      : getCustomTask2Requirements(inferredGenre);
   const customTitle = imageAttachment ? "自定义题目（含题图）" : "自定义题目";
   return {
     title: customTitle,
     source: "用户粘贴题目",
     exam: normalizedExam,
     task: state.selections.essayTask,
-    genre: "custom prompt",
+    genre: inferredGenre || "custom prompt",
     prompt: customPrompt || "已上传题目图片，请结合图片理解题目要求。",
     details: [
-      customPrompt ? "当前使用你粘贴的题目，下面的结构建议已切到通用模式。" : "当前使用你上传的题目图片，AI 会结合图片理解题目。",
+      customPrompt
+        ? inferredGenre
+          ? `已识别题型：${getTask2GenreDisplayName(inferredGenre)}，下面的建议会按这类题走。`
+          : "当前使用你粘贴的题目，下面的结构建议已切到通用模式。"
+        : "当前使用你上传的题目图片，AI 会结合图片理解题目。",
       ...(imageAttachment ? [`已附题图：${imageAttachment.name}`] : []),
     ],
     requirements,

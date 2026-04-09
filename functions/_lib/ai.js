@@ -106,7 +106,9 @@ When exam=ielts, use IELTS Academic Writing expectations.
 When exam=kaoyan, keep the hidden internal score in the 0-9 range for consistency, but do not mention IELTS bands such as "6.5 分" or "Band 6.5" in prose feedback.
 When exam=kaoyan, describe performance in terms of task completion, structure, expression quality, and likely paper-score tendency instead of IELTS-style band wording.
 For IELTS Task 1, treat the first criterion as Task Achievement and be strict about overview, data selection, and avoiding personal opinion.
-For IELTS Task 2, treat the first criterion as Task Response and be strict about fully answering the question, maintaining a clear position, and supporting ideas.
+For IELTS Task 2, treat the first criterion as Task Response and be strict about fully answering the question and supporting ideas.
+For IELTS Task 2 prompts that explicitly ask for a position, judge how clear and consistent that position is.
+For IELTS Task 2 double-question or problem-solution prompts, do not require a personal opinion unless the prompt explicitly asks for one.
 When exam=kaoyan and task=small, focus on task fulfilment, register, format, clarity, completeness, and whether the piece reads like a real English email/notice/letter.
 When exam=kaoyan and task=large, focus on content development, picture/chart interpretation, commentary depth, logic, and natural English expression.
 Do not invent mistakes that are not visible in the essay.
@@ -137,6 +139,51 @@ function providerLabelFromBaseUrl(baseUrl) {
     return "AIHubMix";
   }
   return "OpenAI";
+}
+
+function normalizeTask2GenreLabel(genre) {
+  const normalized = String(genre || "").trim().toLowerCase();
+  if (normalized === "agree or disagree") return "agree or disagree";
+  if (normalized === "discuss both views") return "discuss both views";
+  if (normalized === "advantages disadvantages") return "advantages disadvantages";
+  if (normalized === "problem and solution") return "problem and solution";
+  if (normalized === "double question") return "double question";
+  return "";
+}
+
+function inferIeltsTask2GenreFromPromptText(text) {
+  const promptText = String(text || "").trim();
+  const normalized = promptText.toLowerCase();
+  if (!promptText) {
+    return "";
+  }
+  if (/discuss both views/i.test(promptText)) {
+    return "discuss both views";
+  }
+  if (/to what extent do you agree or disagree|do you agree or disagree/i.test(promptText)) {
+    return "agree or disagree";
+  }
+  if (/advantages?.*disadvantages?|outweigh the disadvantages?/i.test(promptText)) {
+    return "advantages disadvantages";
+  }
+  if (/what problems?.*what solutions?|what problems?.*what measures?|causes this problem.*what can be done/i.test(normalized)) {
+    return "problem and solution";
+  }
+  const questionMarks = (promptText.match(/\?/g) || []).length;
+  const whQuestions = (promptText.match(/\b(what|why|how|who|where|when|which)\b/gi) || []).length;
+  if (questionMarks >= 2 && whQuestions >= 2) {
+    return "double question";
+  }
+  return "";
+}
+
+function getIeltsTask2Genre(promptPayload) {
+  const exam = String(promptPayload?.exam || "ielts").trim().toLowerCase();
+  const task = String(promptPayload?.task || "task2").trim().toLowerCase();
+  if (exam !== "ielts" || task !== "task2") {
+    return "";
+  }
+  return normalizeTask2GenreLabel(promptPayload?.genre) || inferIeltsTask2GenreFromPromptText(promptPayload?.prompt);
 }
 
 function getOpenAICompatiblePrimary(env) {
@@ -402,6 +449,7 @@ function clampWritingReviewPayload(payload) {
 function getExamReviewProfile(promptPayload) {
   const exam = String(promptPayload?.exam || "ielts").trim().toLowerCase() === "kaoyan" ? "kaoyan" : "ielts";
   const task = String(promptPayload?.task || (exam === "kaoyan" ? "large" : "task2")).trim().toLowerCase();
+  const task2Genre = exam === "ielts" && task === "task2" ? getIeltsTask2Genre(promptPayload) : "";
 
   if (exam === "kaoyan") {
     if (task === "small") {
@@ -451,6 +499,40 @@ function getExamReviewProfile(promptPayload) {
         "语言是否客观、数据选择是否有效",
       ],
       phraseLine: "给出适合这道题继续套用的 IELTS Task 1 表达。",
+    };
+  }
+
+  if (task2Genre === "double question") {
+    return {
+      exam,
+      task,
+      examLabel: "IELTS Academic Writing",
+      taskLabel: "Task 2（双问题）",
+      firstCriterion: "Task Response",
+      focuses: [
+        "是否把两个问题都直接回答到了",
+        "两问是否都分到了足够篇幅，而不是只重点写一问",
+        "每一问是否有解释、结果或例子展开",
+        "表达是否自然、书面且符合英文习惯",
+      ],
+      phraseLine: "给出适合这道双问题题继续套用的 IELTS Task 2 表达。",
+    };
+  }
+
+  if (task2Genre === "problem and solution") {
+    return {
+      exam,
+      task,
+      examLabel: "IELTS Academic Writing",
+      taskLabel: "Task 2（问题解决）",
+      firstCriterion: "Task Response",
+      focuses: [
+        "是否把问题和解决都回应到了",
+        "问题是否足够具体，而不是泛泛而谈",
+        "解决方案是否可执行、和问题真正对应",
+        "表达是否自然、书面且符合英文习惯",
+      ],
+      phraseLine: "给出适合这道问题解决题继续套用的 IELTS Task 2 表达。",
     };
   }
 
