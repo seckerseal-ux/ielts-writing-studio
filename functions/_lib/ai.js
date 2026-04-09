@@ -10,6 +10,7 @@ const DEFAULT_AIHUBMIX_WRITING_MODEL = "MiniMax-M2.1";
 const DEFAULT_OPENAI_WRITING_MODEL = "gpt-5-mini";
 const DEFAULT_OPENROUTER_WRITING_MODEL = "openai/gpt-oss-20b:free";
 const OPENAI_COMPAT_TIMEOUT_MS = 45000;
+const OPENAI_COMPAT_PARAGRAPH_TIMEOUT_MS = 18000;
 const OPENROUTER_TIMEOUT_MS = 25000;
 
 const WRITING_REVIEW_SCHEMA = {
@@ -144,6 +145,12 @@ function providerLabelFromBaseUrl(baseUrl) {
   return "OpenAI";
 }
 
+function getReviewMode(localMetrics) {
+  return String(localMetrics?.reviewMode || "essay").trim().toLowerCase() === "paragraph"
+    ? "paragraph"
+    : "essay";
+}
+
 function normalizeTask2GenreLabel(genre) {
   const normalized = String(genre || "").trim().toLowerCase();
   if (normalized === "agree or disagree") return "agree or disagree";
@@ -189,7 +196,7 @@ function getIeltsTask2Genre(promptPayload) {
   return normalizeTask2GenreLabel(promptPayload?.genre) || inferIeltsTask2GenreFromPromptText(promptPayload?.prompt);
 }
 
-function getOpenAICompatiblePrimary(env) {
+function getOpenAICompatiblePrimary(env, reviewMode = "essay") {
   const baseUrl = String(env.OPENAI_BASE_URL || DEFAULT_GEMAI_BASE_URL).trim();
   const label = providerLabelFromBaseUrl(baseUrl);
   const defaultModel = label === "GemAI"
@@ -197,17 +204,27 @@ function getOpenAICompatiblePrimary(env) {
     : label === "AIHubMix"
       ? DEFAULT_AIHUBMIX_WRITING_MODEL
       : DEFAULT_OPENAI_WRITING_MODEL;
+  const timeoutMs = reviewMode === "paragraph"
+    ? Math.min(
+      Number(env.OPENAI_COMPAT_PARAGRAPH_TIMEOUT_MS || OPENAI_COMPAT_PARAGRAPH_TIMEOUT_MS),
+      Number(env.OPENAI_COMPAT_TIMEOUT_MS || OPENAI_COMPAT_TIMEOUT_MS),
+    )
+    : Number(env.OPENAI_COMPAT_TIMEOUT_MS || OPENAI_COMPAT_TIMEOUT_MS);
 
   return {
     label,
     apiKey: String(env.OPENAI_API_KEY || "").trim(),
     baseUrl,
-    model: String(env.OPENAI_WRITING_REVIEW_MODEL || defaultModel).trim(),
-    timeoutMs: Number(env.OPENAI_COMPAT_TIMEOUT_MS || OPENAI_COMPAT_TIMEOUT_MS),
+    model: String(
+      (reviewMode === "paragraph" ? env.OPENAI_PARAGRAPH_REVIEW_MODEL : "")
+      || env.OPENAI_WRITING_REVIEW_MODEL
+      || defaultModel,
+    ).trim(),
+    timeoutMs,
   };
 }
 
-function getOpenAICompatibleFallback(env) {
+function getOpenAICompatibleFallback(env, reviewMode = "essay") {
   const apiKey = String(env.OPENAI_COMPAT_FALLBACK_API_KEY || "").trim();
   const baseUrl = String(env.OPENAI_COMPAT_FALLBACK_BASE_URL || "").trim();
   if (!apiKey || !baseUrl) {
@@ -220,13 +237,23 @@ function getOpenAICompatibleFallback(env) {
     : label === "AIHubMix"
       ? DEFAULT_AIHUBMIX_WRITING_MODEL
       : DEFAULT_OPENAI_WRITING_MODEL;
+  const timeoutMs = reviewMode === "paragraph"
+    ? Math.min(
+      Number(env.OPENAI_COMPAT_FALLBACK_PARAGRAPH_TIMEOUT_MS || OPENAI_COMPAT_PARAGRAPH_TIMEOUT_MS),
+      Number(env.OPENAI_COMPAT_FALLBACK_TIMEOUT_MS || OPENAI_COMPAT_TIMEOUT_MS),
+    )
+    : Number(env.OPENAI_COMPAT_FALLBACK_TIMEOUT_MS || OPENAI_COMPAT_TIMEOUT_MS);
 
   return {
     label,
     apiKey,
     baseUrl,
-    model: String(env.OPENAI_COMPAT_FALLBACK_WRITING_MODEL || defaultModel).trim(),
-    timeoutMs: Number(env.OPENAI_COMPAT_FALLBACK_TIMEOUT_MS || OPENAI_COMPAT_TIMEOUT_MS),
+    model: String(
+      (reviewMode === "paragraph" ? env.OPENAI_COMPAT_FALLBACK_PARAGRAPH_MODEL : "")
+      || env.OPENAI_COMPAT_FALLBACK_WRITING_MODEL
+      || defaultModel,
+    ).trim(),
+    timeoutMs,
   };
 }
 
@@ -449,10 +476,12 @@ function clampWritingReviewPayload(payload) {
   return review;
 }
 
-function getExamReviewProfile(promptPayload) {
+function getExamReviewProfile(promptPayload, localMetrics = {}) {
   const exam = String(promptPayload?.exam || "ielts").trim().toLowerCase() === "kaoyan" ? "kaoyan" : "ielts";
   const task = String(promptPayload?.task || (exam === "kaoyan" ? "large" : "task2")).trim().toLowerCase();
   const task2Genre = exam === "ielts" && task === "task2" ? getIeltsTask2Genre(promptPayload) : "";
+  const reviewMode = getReviewMode(localMetrics);
+  const isParagraphReview = reviewMode === "paragraph";
 
   if (exam === "kaoyan") {
     if (task === "small") {
@@ -460,7 +489,7 @@ function getExamReviewProfile(promptPayload) {
         exam,
         task,
         examLabel: "考研英语写作",
-        taskLabel: "小作文",
+        taskLabel: isParagraphReview ? "小作文段落训练" : "小作文",
         firstCriterion: "Task Fulfilment",
         focuses: [
           "是否完成题目要求和写作目的",
@@ -476,7 +505,7 @@ function getExamReviewProfile(promptPayload) {
       exam,
       task,
       examLabel: "考研英语写作",
-      taskLabel: "大作文",
+      taskLabel: isParagraphReview ? "大作文段落训练" : "大作文",
       firstCriterion: "Content & Logic",
       focuses: [
         "是否抓住图表或图画最核心的信息",
@@ -493,7 +522,7 @@ function getExamReviewProfile(promptPayload) {
       exam,
       task,
       examLabel: "IELTS Academic Writing",
-      taskLabel: "Task 1",
+      taskLabel: isParagraphReview ? "Task 1 段落训练" : "Task 1",
       firstCriterion: "Task Achievement",
       focuses: [
         "是否写出 overview",
@@ -510,7 +539,7 @@ function getExamReviewProfile(promptPayload) {
       exam,
       task,
       examLabel: "IELTS Academic Writing",
-      taskLabel: "Task 2（双问题）",
+      taskLabel: isParagraphReview ? "Task 2 双问题段落训练" : "Task 2（双问题）",
       firstCriterion: "Task Response",
       focuses: [
         "是否把两个问题都直接回答到了",
@@ -528,7 +557,7 @@ function getExamReviewProfile(promptPayload) {
       exam,
       task,
       examLabel: "IELTS Academic Writing",
-      taskLabel: "Task 2（问题解决）",
+      taskLabel: isParagraphReview ? "Task 2 问题解决段落训练" : "Task 2（问题解决）",
       firstCriterion: "Task Response",
       focuses: [
         "是否把问题和解决都回应到了",
@@ -545,7 +574,7 @@ function getExamReviewProfile(promptPayload) {
     exam,
     task,
     examLabel: "IELTS Academic Writing",
-    taskLabel: "Task 2",
+    taskLabel: isParagraphReview ? "Task 2 段落训练" : "Task 2",
     firstCriterion: "Task Response",
     focuses: [
       "是否真正回答题目",
@@ -600,11 +629,15 @@ function summarizePromptPayload(promptPayload) {
 }
 
 function buildReviewPrompt(promptPayload, essayText, localMetrics, targetBand) {
-  const profile = getExamReviewProfile(promptPayload);
+  const profile = getExamReviewProfile(promptPayload, localMetrics);
   const promptSummary = summarizePromptPayload(promptPayload);
   const hasPromptImage = Boolean(getPromptImageAttachment(promptPayload));
+  const reviewMode = getReviewMode(localMetrics);
+  const isParagraphReview = reviewMode === "paragraph";
   return `
 请按 ${profile.examLabel} 的 ${profile.taskLabel} 标准做评估。
+
+${isParagraphReview ? "这次是单段训练，不是整篇作文。不要因为没有引言、结尾或完整分段而扣分，重点评估这一段本身有没有完成它该做的事。" : ""}
 
 题目定义:
 ${JSON.stringify(promptSummary, null, 2)}
@@ -634,7 +667,7 @@ ${profile.focuses.map((item, index) => `${index + 1}. ${item}`).join("\n")}
 1. 2-4 个 focus_areas，使用短标签描述下一轮最需要盯住的改进方向。
 2. 2-4 个 sentence_upgrades，只改写考生原文里真实存在的句子。
 3. 2-4 个 vocabulary_upgrades，聚焦重复、口语化或偏弱的表达。
-4. 3-5 条 paragraph_plan，告诉考生如何更好地重写这篇作文的结构。
+4. ${isParagraphReview ? "2-4 条 paragraph_plan，告诉考生如何把这一个段落改得更顺，不要按整篇作文列提纲。" : "3-5 条 paragraph_plan，告诉考生如何更好地重写这篇作文的结构。"}
 5. 3-5 个 useful_phrases，${profile.phraseLine}
 `.trim();
 }
@@ -780,14 +813,15 @@ async function requestFromOpenRouter(config, promptPayload, userInput) {
 
 export async function requestStructuredReview(env, providerName, promptPayload, essayText, localMetrics, targetBand) {
   const provider = normalizeProviderName(providerName);
+  const reviewMode = getReviewMode(localMetrics);
   const userInput = buildReviewPrompt(promptPayload, essayText, localMetrics, targetBand);
 
   if (provider === "openrouter") {
     return requestFromOpenRouter(getOpenRouterConfig(env), promptPayload, userInput);
   }
 
-  const primary = getOpenAICompatiblePrimary(env);
-  const fallback = getOpenAICompatibleFallback(env);
+  const primary = getOpenAICompatiblePrimary(env, reviewMode);
+  const fallback = getOpenAICompatibleFallback(env, reviewMode);
 
   try {
     return await requestFromOpenAICompatible(primary, promptPayload, userInput);

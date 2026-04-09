@@ -571,7 +571,7 @@ const paragraphPrompts = [
     prompt: "The line graph compares the share of electricity generated from wind and solar energy in France and Germany from 2000 to 2020.",
     source: "Cambridge-style 改写题",
     notes: ["France wind: 5% -> 28%", "France solar: 1% -> 18%", "Germany wind: 8% -> 24%", "Germany solar: 0% -> 21%"],
-    targetWords: [50, 90],
+    targetWords: [30, 50],
     checklist: ["先概括总趋势", "至少提一个最高或变化最快项", "不要出现个人观点"],
     keywords: ["wind", "solar", "france", "germany", "increase", "overall"],
     categories: ["总览", "比较", "趋势"],
@@ -2937,7 +2937,9 @@ function getParagraphPlaceholder(prompt) {
       : "考研大作文先点出现象，再补评论，不要只做图画或图表播报员。";
   }
   return prompt.task === "task1"
-    ? "雅思 Task 1 建议 50-90 词，先总览后细节，别在图表前突然发表人生感悟。"
+    ? prompt.type === "overview"
+      ? "雅思 Task 1 的 overall 段建议 30-50 词，先抓总趋势，别把它写成细节大杂烩。"
+      : "雅思 Task 1 段落建议 50-90 词，先总览后细节，别在图表前突然发表人生感悟。"
     : "雅思 Task 2 建议 90-140 词，先立主论点，再给原因和例子。";
 }
 

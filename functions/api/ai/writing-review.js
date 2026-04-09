@@ -49,6 +49,12 @@ function sanitizePromptPayload(rawPayload) {
   return payload;
 }
 
+function getReviewMode(payload) {
+  return String(payload?.local_metrics?.reviewMode || "").trim().toLowerCase() === "paragraph"
+    ? "paragraph"
+    : "essay";
+}
+
 async function processReviewJob(env, job) {
   await markReviewJobRunning(env, job.id, {
     provider: job.provider,
@@ -92,12 +98,32 @@ export async function onRequestPost(context) {
     const provider = String(payload.backend || payload.provider || "openai").trim().toLowerCase() === "openrouter"
       ? "openrouter"
       : "openai";
+    const reviewMode = getReviewMode(payload);
     const essayText = validateEssayText(payload);
     const promptPayload = sanitizePromptPayload(payload.prompt_payload);
     const providerStatus = status.backends?.[provider];
 
     if (!providerStatus?.available) {
       return json({ error: "当前选择的 AI 后端还没有配置完成。" }, 503);
+    }
+
+    if (reviewMode === "paragraph") {
+      const result = await requestStructuredReview(
+        context.env,
+        provider,
+        promptPayload,
+        essayText,
+        payload.local_metrics || {},
+        payload.target_band || "",
+      );
+
+      return json({
+        async: false,
+        provider,
+        provider_label: result.provider_label || providerStatus.provider_label,
+        review_model: result.model || providerStatus.writing_review_model,
+        review: result.review || result,
+      });
     }
 
     const job = await createReviewJob(context.env, {
