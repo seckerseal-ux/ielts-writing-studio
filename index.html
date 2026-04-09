@@ -286,8 +286,12 @@
             placeholder="会根据上方考试与题型自动切换建议字数。"
           ></textarea>
           <div class="writing-toolbar">
-            <span class="word-counter" id="paragraph-word-count">0 词</span>
-            <div class="inline-controls">
+            <div class="writing-toolbar__meta">
+              <span class="word-counter" id="paragraph-word-count">0 词</span>
+              <span class="writing-toolbar__hint">写崩了也别慌，右手边有原地重开按钮。</span>
+            </div>
+            <div class="inline-controls writing-toolbar__actions">
+              <button class="button button--soft" id="paragraph-clear" type="button">一键清空</button>
               <button class="button button--ghost" id="paragraph-evaluate" type="button">本地快评</button>
               <button class="button button--primary" id="paragraph-ai-evaluate" type="button">AI 精批</button>
             </div>
@@ -339,6 +343,7 @@
               <p>考研图画题、图表题，或者手机里那张不想手敲的题目图，都可以直接扔进来。</p>
             </div>
             <div class="prompt-upload-panel__actions">
+              <button class="button button--soft" id="custom-prompt-clear" type="button">清空自定义题</button>
               <label class="button button--ghost upload-button" for="custom-prompt-image">上传题图</label>
               <button class="button button--ghost" id="custom-prompt-image-clear" type="button">移除题图</button>
               <input id="custom-prompt-image" type="file" accept="image/*" hidden />
@@ -375,8 +380,12 @@
             placeholder="会根据上方考试与题型自动切换建议字数。写完先看本地快评，再决定是否让 AI 下场挑刺。"
           ></textarea>
           <div class="writing-toolbar">
-            <span class="word-counter" id="essay-word-count">0 词</span>
-            <div class="inline-controls">
+            <div class="writing-toolbar__meta">
+              <span class="word-counter" id="essay-word-count">0 词</span>
+              <span class="writing-toolbar__hint">如果这一版写成了灾后现场，点一下就能把文本框洗白。</span>
+            </div>
+            <div class="inline-controls writing-toolbar__actions">
+              <button class="button button--soft" id="essay-clear" type="button">一键清空</button>
               <button class="button button--ghost" id="essay-evaluate" type="button">本地快评</button>
               <button class="button button--primary" id="essay-ai-evaluate" type="button">AI 精批</button>
             </div>

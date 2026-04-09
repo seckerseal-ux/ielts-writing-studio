@@ -1891,6 +1891,7 @@ const els = {
   paragraphPrompt: document.querySelector("#paragraph-prompt"),
   paragraphText: document.querySelector("#paragraph-text"),
   paragraphWordCount: document.querySelector("#paragraph-word-count"),
+  paragraphClear: document.querySelector("#paragraph-clear"),
   paragraphEvaluate: document.querySelector("#paragraph-evaluate"),
   paragraphAiEvaluate: document.querySelector("#paragraph-ai-evaluate"),
   paragraphRandom: document.querySelector("#paragraph-random"),
@@ -1901,11 +1902,13 @@ const els = {
   essaySelect: document.querySelector("#essay-select"),
   essayPrompt: document.querySelector("#essay-prompt"),
   customPrompt: document.querySelector("#custom-prompt"),
+  customPromptClear: document.querySelector("#custom-prompt-clear"),
   customPromptImage: document.querySelector("#custom-prompt-image"),
   customPromptImageClear: document.querySelector("#custom-prompt-image-clear"),
   customPromptImagePreview: document.querySelector("#custom-prompt-image-preview"),
   essayText: document.querySelector("#essay-text"),
   essayWordCount: document.querySelector("#essay-word-count"),
+  essayClear: document.querySelector("#essay-clear"),
   essayEvaluate: document.querySelector("#essay-evaluate"),
   essayAiEvaluate: document.querySelector("#essay-ai-evaluate"),
   essayAiBackend: document.querySelector("#essay-ai-backend"),
@@ -2222,6 +2225,7 @@ function bindEvents() {
     saveState();
   });
 
+  els.paragraphClear?.addEventListener("click", clearParagraphDraft);
   els.paragraphEvaluate.addEventListener("click", evaluateParagraph);
   els.paragraphAiEvaluate?.addEventListener("click", evaluateParagraphAi);
 
@@ -2279,6 +2283,7 @@ function bindEvents() {
     state.drafts.customPrompt = els.customPrompt.value;
     saveState();
   });
+  els.customPromptClear?.addEventListener("click", clearCustomPromptDraft);
   els.customPromptImage?.addEventListener("change", handleCustomPromptImageChange);
   els.customPromptImageClear?.addEventListener("click", clearCustomPromptImage);
 
@@ -2288,6 +2293,7 @@ function bindEvents() {
     saveState();
   });
 
+  els.essayClear?.addEventListener("click", clearEssayDraft);
   els.essayEvaluate.addEventListener("click", evaluateEssayLocal);
   els.essayAiEvaluate.addEventListener("click", evaluateEssayAi);
   els.essayAiBackend?.addEventListener("change", () => {
@@ -2387,6 +2393,32 @@ function handlePreferredExamUpdate() {
   els.essayResult.innerHTML = "";
   renderAll();
   saveState();
+}
+
+function clearParagraphDraft() {
+  state.drafts.paragraphText = "";
+  els.paragraphText.value = "";
+  updateWordCount(els.paragraphText, els.paragraphWordCount);
+  els.paragraphResult.innerHTML = "";
+  saveState();
+  els.paragraphText.focus();
+}
+
+function clearEssayDraft() {
+  state.drafts.essayText = "";
+  els.essayText.value = "";
+  updateWordCount(els.essayText, els.essayWordCount);
+  els.essayResult.innerHTML = "";
+  saveState();
+  els.essayText.focus();
+}
+
+function clearCustomPromptDraft() {
+  state.drafts.customPrompt = "";
+  els.customPrompt.value = "";
+  clearCustomPromptImage();
+  saveState();
+  els.customPrompt.focus();
 }
 
 function renderAll() {
@@ -3045,6 +3077,7 @@ async function handleCustomPromptImageChange(event) {
     customPromptImageState.width = normalized.width;
     customPromptImageState.height = normalized.height;
     renderCustomPromptImagePreview();
+    renderEssayPrompt({ resetResult: true });
   } catch (error) {
     clearCustomPromptImage();
     els.essayResult.insertAdjacentHTML("afterbegin", `
@@ -3070,6 +3103,7 @@ function clearCustomPromptImage() {
     els.customPromptImage.value = "";
   }
   renderCustomPromptImagePreview();
+  renderEssayPrompt({ resetResult: true });
 }
 
 function renderPromptPanel(prompt, mode) {
