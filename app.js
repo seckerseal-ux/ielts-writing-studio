@@ -5355,6 +5355,7 @@ async function pushCloudProgressSnapshot(snapshot = buildStateSnapshot(), option
     return false;
   }
 
+  const pushedSnapshotUpdatedAt = getSnapshotUpdatedAt(snapshot) || Date.now();
   cloudAccountSyncInFlight = true;
   accountSyncState.syncing = true;
   setCloudSyncStatus("同步中", "info", `正在把这份写作记录存到账号“${accountSyncState.accountId}”里。`);
@@ -5369,17 +5370,30 @@ async function pushCloudProgressSnapshot(snapshot = buildStateSnapshot(), option
     });
 
     if (payload?.state && payload.conflict) {
-      await applyCloudRemoteSnapshot(payload.state, payload.updatedAt, {
-        announceMessage: "云端那边有更新一些的版本，已经替你切过去了。",
-      });
+      const remoteUpdatedAt = Math.max(Number(payload?.updatedAt || 0) || 0, getSnapshotUpdatedAt(payload.state));
+      if (getSnapshotUpdatedAt(state) <= pushedSnapshotUpdatedAt) {
+        await applyCloudRemoteSnapshot(payload.state, payload.updatedAt, {
+          announceMessage: "云端那边有更新一些的版本，已经替你切过去了。",
+        });
+      } else {
+        accountSyncState.lastSyncedAt = remoteUpdatedAt || Date.now();
+        persistCloudSyncSession();
+        setCloudSyncStatus("待同步", "warning", "你刚刚还在继续输入，本地新版先保留，系统会稍后再追一次同步。");
+      }
       return true;
     }
 
     if (payload?.state) {
-      state = normalizePersistedState(payload.state);
-      saveState({ sync: false, accountSync: false, touch: false });
-      hydrateControls();
-      renderAll();
+      const echoedUpdatedAt = Math.max(Number(payload?.updatedAt || 0) || 0, getSnapshotUpdatedAt(payload.state));
+      if (getSnapshotUpdatedAt(state) <= pushedSnapshotUpdatedAt) {
+        state = normalizePersistedState(payload.state);
+        saveState({ sync: false, accountSync: false, touch: false });
+        hydrateControls();
+        renderAll();
+      } else {
+        accountSyncState.lastSyncedAt = echoedUpdatedAt || Date.now();
+        persistCloudSyncSession();
+      }
     }
 
     accountSyncState.lastSyncedAt = Number(payload?.updatedAt || getSnapshotUpdatedAt(snapshot) || Date.now()) || Date.now();
@@ -5398,6 +5412,9 @@ async function pushCloudProgressSnapshot(snapshot = buildStateSnapshot(), option
     }
     return false;
   } finally {
+    if (getSnapshotUpdatedAt(state) > pushedSnapshotUpdatedAt) {
+      scheduleAccountCloudSync();
+    }
     accountSyncState.syncing = false;
     cloudAccountSyncInFlight = false;
     updateCloudSyncUI();
