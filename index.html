@@ -189,18 +189,27 @@
             </label>
           </form>
           <div class="note-stack">
-            <article class="note-card">
-              <h3>推荐节奏</h3>
-              <p>每天 25 分钟就够用：2 个填空 + 1 个段落 + 1 次整篇或半篇复盘。别把自己练成写作界加班侠。</p>
-            </article>
-            <article class="note-card">
-              <h3>高分提醒</h3>
-              <p>雅思 Task 1 不写个人观点；考研小作文别忘格式；大作文别只描述画面。例子宁少而具体，不要把空话写出排比气势。</p>
-            </article>
-            <article class="note-card">
-              <h3>AI 说明</h3>
+            <details class="note-card note-card--fold">
+              <summary>
+                <span>推荐节奏</span>
+                <small>25 分钟够用了，别把写作练成连续加班。</small>
+              </summary>
+              <p>每天 25 分钟就够用：2 个填空 + 1 个段落 + 1 次整篇或半篇复盘。稳定练，比热血三天后人间蒸发更有用。</p>
+            </details>
+            <details class="note-card note-card--fold" open>
+              <summary>
+                <span>高分提醒</span>
+                <small>例子宁少而具体，别把空话写出排比气势。</small>
+              </summary>
+              <p>雅思 Task 1 不写个人观点；考研小作文别忘格式；大作文别只描述画面。先把句子写实，再谈“高级感”。</p>
+            </details>
+            <details class="note-card note-card--fold">
+              <summary>
+                <span>AI 说明</span>
+                <small>这位电子阅卷老师主要负责挑刺、顺句子和抓不地道表达。</small>
+              </summary>
               <p id="ai-side-meta">AI 这位电子阅卷老师主要干三件事：挑毛病、改句子、顺手把你那些不太地道的表达拎出来晒一晒。</p>
-            </article>
+            </details>
             <article class="note-card">
               <h3>云端同步</h3>
               <div class="cloud-status-stack">
@@ -394,27 +403,29 @@
         </section>
       </div>
 
-      <section class="panel" id="history">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">训练记录</p>
-            <h2>最近几次练习的分数和翻车点</h2>
+      <div class="review-zone">
+        <section class="panel" id="corpus">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">个人语料库</p>
+              <h2>根据你的每次练习动态攒句型和语料</h2>
+            </div>
+            <p class="section-head__hint">这里不是模板公墓，而是会跟着你每次练习慢慢长出来的个人弹药库。</p>
           </div>
-          <button class="button button--ghost" id="history-clear" type="button">清空记录</button>
-        </div>
-        <div class="history-list" id="history-list"></div>
-      </section>
+          <div class="corpus-grid" id="corpus-grid"></div>
+        </section>
 
-      <section class="panel" id="corpus">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">个人语料库</p>
-            <h2>根据你的每次练习动态攒句型和语料</h2>
+        <section class="panel panel--compact" id="history">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">训练记录</p>
+              <h2>最近几次翻车点</h2>
+            </div>
+            <button class="button button--ghost" id="history-clear" type="button">清空</button>
           </div>
-          <p class="section-head__hint">这里不是模板公墓，而是会跟着你每次练习慢慢长出来的个人弹药库。</p>
-        </div>
-        <div class="corpus-grid" id="corpus-grid"></div>
-      </section>
+          <div class="history-list" id="history-list"></div>
+        </section>
+      </div>
 
       <footer class="footer">
         <p>适合日常写作训练、句式积累和快速自评。它不保证你写完立刻封神，但至少能帮你少踩几个明明昨天还踩过的坑。</p>

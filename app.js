@@ -4230,12 +4230,12 @@ function updateCorpusFromReview(prompt, result, aiReview = null) {
 function renderCorpus() {
   const corpus = normalizeCorpusState(state.corpus);
   const sections = [
-    { title: "最适合你反复调用的句型", items: corpus.usefulPatterns, empty: "做完几次练习后，这里会留下更适合你当前题型的句型。" },
-    { title: "高频词汇升级", items: corpus.lexicalUpgrades, empty: "每次练习里被替换得最多的词和短语会累积在这里。" },
-    { title: "当前要盯住的语法问题", items: corpus.grammarWatchlist, empty: "这里会积累你最常重复出现的语法风险点。" },
-    { title: "更像英文习惯的表达", items: corpus.idiomWatchlist, empty: "不太自然的表达和更顺的替换说法会慢慢沉淀在这里。" },
-    { title: "例子积累", items: corpus.exampleBank, empty: "以后这里会专门留下那种能把抽象观点砸回具体场景里的例句。" },
-    { title: "值得背下来的润色句", items: corpus.polishedSnippets, empty: "每次改写里更成熟的句子会保留在这里，方便你回看。" },
+    { title: "最适合你反复调用的句型", items: corpus.usefulPatterns, empty: "做完几次练习后，这里会留下更适合你当前题型的句型。", kind: "default" },
+    { title: "高频词汇升级", items: corpus.lexicalUpgrades, empty: "每次练习里被替换得最多的词和短语会累积在这里。", kind: "default" },
+    { title: "当前要盯住的语法问题", items: corpus.grammarWatchlist, empty: "这里会积累你最常重复出现的语法风险点。", kind: "default" },
+    { title: "更像英文习惯的表达", items: corpus.idiomWatchlist, empty: "不太自然的表达和更顺的替换说法会慢慢沉淀在这里。", kind: "default" },
+    { title: "例子积累", items: corpus.exampleBank, empty: "以后这里会专门留下那种能把抽象观点砸回具体场景里的例句。", kind: "example" },
+    { title: "值得背下来的润色句", items: corpus.polishedSnippets, empty: "每次改写里更成熟的句子会保留在这里，方便你回看。", kind: "polished" },
   ];
 
   els.corpusGrid.innerHTML = sections.map((section) => `
@@ -4244,12 +4244,73 @@ function renderCorpus() {
         <h3>${escapeHtml(section.title)}</h3>
       </div>
       ${section.items.length ? `
-        <ul>
-          ${section.items.slice(0, 5).map((item) => `<li>${escapeHtml(item.text)} <span class="corpus-card__count">x${item.count}</span></li>`).join("")}
+        <ul class="corpus-list">
+          ${section.items.slice(0, 5).map((item) => renderCorpusEntry(section.kind, item)).join("")}
         </ul>
       ` : `<p>${escapeHtml(section.empty)}</p>`}
     </article>
   `).join("");
+}
+
+function splitPolishedSnippet(text) {
+  const sentence = String(text || "").replace(/\s+/g, " ").trim();
+  if (!sentence) {
+    return { pattern: "", example: "" };
+  }
+
+  const thatMatch = sentence.match(/^(.*?\bthat\b)\s+(.+)$/i);
+  if (thatMatch && thatMatch[1].length <= 86) {
+    return {
+      pattern: thatMatch[1].trim(),
+      example: thatMatch[2].trim(),
+    };
+  }
+
+  const commaIndex = sentence.indexOf(",");
+  if (commaIndex > 8 && commaIndex < Math.min(sentence.length - 12, 92)) {
+    return {
+      pattern: sentence.slice(0, commaIndex + 1).trim(),
+      example: sentence.slice(commaIndex + 1).trim(),
+    };
+  }
+
+  return { pattern: "", example: sentence };
+}
+
+function renderCorpusEntry(kind, item) {
+  const text = escapeHtml(item.text);
+  if (kind === "polished") {
+    const snippet = splitPolishedSnippet(item.text);
+    return `
+      <li class="corpus-entry corpus-entry--polished">
+        <div class="corpus-entry__main">
+          ${snippet.pattern ? `<div class="corpus-entry__pattern">${escapeHtml(snippet.pattern)}</div>` : ""}
+          <div class="corpus-entry__example">${escapeHtml(snippet.example || item.text)}</div>
+        </div>
+        <span class="corpus-card__count">x${item.count}</span>
+      </li>
+    `;
+  }
+
+  if (kind === "example") {
+    return `
+      <li class="corpus-entry">
+        <div class="corpus-entry__main">
+          <div class="corpus-entry__example corpus-entry__example--plain">${text}</div>
+        </div>
+        <span class="corpus-card__count">x${item.count}</span>
+      </li>
+    `;
+  }
+
+  return `
+    <li class="corpus-entry">
+      <div class="corpus-entry__main">
+        <div class="corpus-entry__text">${text}</div>
+      </div>
+      <span class="corpus-card__count">x${item.count}</span>
+    </li>
+  `;
 }
 
 function renderIssueItems(items) {
@@ -4608,7 +4669,7 @@ function renderHistory() {
     return;
   }
 
-  els.historyList.innerHTML = history.slice(0, 12).map((item) => {
+  els.historyList.innerHTML = history.slice(0, 6).map((item) => {
     const scoreView = getHistoryScorePresentation(item);
     const scoreClass = scoreView.mode === "kaoyan" ? "history-item__band history-item__band--compact" : "history-item__band";
     return `
