@@ -684,23 +684,25 @@ function buildReviewMessageContent(promptPayload, userInput) {
   ];
 }
 
-async function withTimeout(promise, timeoutMs, message) {
-  let timeoutId = null;
-  const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => reject(createError(message, 504)), timeoutMs);
-  });
+async function fetchJson(url, init, timeoutMs, label) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  let response;
 
   try {
-    return await Promise.race([promise, timeoutPromise]);
-  } finally {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
+    response = await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw createError(`${label} 请求超时，请尝试下一个可用模型。`, 504);
     }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-}
 
-async function fetchJson(url, init, timeoutMs, label) {
-  const response = await withTimeout(fetch(url, init), timeoutMs, `${label} 请求超时，请尝试下一个可用模型。`);
   const rawText = await response.text();
   let payload = {};
 
