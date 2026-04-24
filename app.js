@@ -1820,6 +1820,7 @@ const defaultState = {
     running: false,
   },
   aiArchive: [],
+  pendingReview: null,
   corpus: {
     usefulPatterns: [],
     lexicalUpgrades: [],
@@ -1836,7 +1837,7 @@ let cloudSyncTimer = null;
 let accountCloudSyncTimer = null;
 let cloudAccountSyncInFlight = false;
 const AI_REVIEW_POLL_INTERVAL_MS = 3000;
-const AI_REVIEW_POLL_TIMEOUT_MS = 4 * 60 * 1000;
+const AI_REVIEW_POLL_TIMEOUT_MS = 12 * 60 * 1000;
 const aiState = {
   checked: false,
   available: false,
@@ -1956,6 +1957,24 @@ function normalizeCorpusState(payload) {
   };
 }
 
+function normalizePendingReview(payload) {
+  const source = payload && typeof payload === "object" ? payload : null;
+  if (!source?.jobId) {
+    return null;
+  }
+
+  return {
+    jobId: String(source.jobId || "").trim(),
+    kind: source.kind === "paragraph" ? "paragraph" : "essay",
+    createdAt: Math.max(0, Number(source.createdAt || 0) || 0),
+    providerLabel: String(source.providerLabel || "").trim(),
+    reviewModel: String(source.reviewModel || "").trim(),
+    prompt: source.prompt && typeof source.prompt === "object" ? source.prompt : null,
+    localReview: source.localReview && typeof source.localReview === "object" ? source.localReview : null,
+    meta: source.meta && typeof source.meta === "object" ? source.meta : {},
+  };
+}
+
 function normalizePersistedState(payload) {
   const parsed = payload && typeof payload === "object" ? payload : {};
   return {
@@ -1966,6 +1985,7 @@ function normalizePersistedState(payload) {
     selections: { ...defaultState.selections, ...(parsed.selections || {}) },
     timer: { ...defaultState.timer, ...(parsed.timer || {}), running: false },
     aiArchive: Array.isArray(parsed.aiArchive) ? parsed.aiArchive.slice(0, 12) : [],
+    pendingReview: normalizePendingReview(parsed.pendingReview),
     corpus: normalizeCorpusState(parsed.corpus),
   };
 }
@@ -2104,6 +2124,7 @@ function init() {
   bindScrollButtons();
   hydrateControls();
   renderAll();
+  renderPendingReviewRecovery();
   bindEvents();
   checkAiStatus();
   bootstrapCloudState()
@@ -2228,6 +2249,7 @@ function bindEvents() {
   els.paragraphClear?.addEventListener("click", clearParagraphDraft);
   els.paragraphEvaluate.addEventListener("click", evaluateParagraph);
   els.paragraphAiEvaluate?.addEventListener("click", evaluateParagraphAi);
+  els.paragraphResult?.addEventListener("click", handlePendingReviewAction);
 
   els.essayExamFilter?.addEventListener("change", () => {
     state.selections.essayExam = normalizeExam(els.essayExamFilter.value);
@@ -2296,6 +2318,7 @@ function bindEvents() {
   els.essayClear?.addEventListener("click", clearEssayDraft);
   els.essayEvaluate.addEventListener("click", evaluateEssayLocal);
   els.essayAiEvaluate.addEventListener("click", evaluateEssayAi);
+  els.essayResult?.addEventListener("click", handlePendingReviewAction);
   els.essayAiBackend?.addEventListener("change", () => {
     state.selections.aiBackend = normalizeAiBackend(els.essayAiBackend.value);
     syncSelectedAiBackend(false);
@@ -3255,6 +3278,38 @@ function setParagraphAiBusy(isBusy, label = "AI 精批") {
   setReviewButtonBusy(els.paragraphAiEvaluate, isBusy, label);
 }
 
+function rememberPendingReview(payload, prompt, localReview, meta = {}) {
+  if (!payload?.job_id) {
+    return;
+  }
+  const promptSnapshot = prompt && typeof prompt === "object"
+    ? { ...prompt, image_attachment: undefined }
+    : null;
+
+  state.pendingReview = {
+    jobId: String(payload.job_id),
+    kind: meta.kind === "paragraph" ? "paragraph" : "essay",
+    createdAt: Date.now(),
+    providerLabel: payload.provider_label || "",
+    reviewModel: payload.review_model || "",
+    prompt: promptSnapshot,
+    localReview,
+    meta,
+  };
+  saveState();
+}
+
+function clearPendingReview(jobId = "") {
+  if (!state.pendingReview) {
+    return;
+  }
+  if (jobId && state.pendingReview.jobId !== jobId) {
+    return;
+  }
+  state.pendingReview = null;
+  saveState();
+}
+
 function renderAiPendingEvaluation(backendLabel, payload = {}) {
   const shortJobId = String(payload.job_id || "").trim().slice(0, 8);
   return `
@@ -3266,6 +3321,21 @@ function renderAiPendingEvaluation(backendLabel, payload = {}) {
         ${shortJobId ? `<span class="tag">任务 ${escapeHtml(shortJobId)}</span>` : ""}
       </div>
       <p>这次精批已经转到后台继续处理。你可以先看上面的本地快评，页面会自动轮询结果并补上完整 AI 批改。</p>
+    </div>
+  `;
+}
+
+function renderAiStillRunningNotice(payload = {}) {
+  const jobId = String(payload.job_id || payload.id || state.pendingReview?.jobId || "").trim();
+  const shortJobId = jobId.slice(0, 8);
+  return `
+    <div class="feedback feedback--warning">
+      <strong>AI 还在后台慢慢磨这篇</strong>
+      <p>这次请求已经发出去了，模型可能还在生成或后台还没来得及写回结果。不要重新提交同一篇，先点下面这个按钮继续查，能少花一份冤枉额度。</p>
+      <div class="note-card__actions">
+        <button class="button button--ghost" data-review-action="resume" data-review-job-id="${escapeHtml(jobId)}" type="button">继续查询结果</button>
+        ${shortJobId ? `<span class="tag">任务 ${escapeHtml(shortJobId)}</span>` : ""}
+      </div>
     </div>
   `;
 }
@@ -3315,6 +3385,7 @@ function applyAiEvaluationResult(container, prompt, localReview, payload, meta =
     });
     state.aiArchive = state.aiArchive.slice(0, 12);
   }
+  clearPendingReview(payload.id || payload.job_id || "");
   saveState();
   renderStats();
   renderHistory();
@@ -3325,8 +3396,20 @@ function waitFor(milliseconds) {
   return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
-async function pollAiReviewJob(jobId) {
-  const deadline = Date.now() + AI_REVIEW_POLL_TIMEOUT_MS;
+function createStillRunningError(jobId) {
+  const error = new Error("AI 精批仍在后台处理中。");
+  error.code = "still_running";
+  error.jobId = jobId;
+  return error;
+}
+
+function isStillRunningError(error) {
+  return error?.code === "still_running" || /仍在后台处理中/.test(String(error?.message || ""));
+}
+
+async function pollAiReviewJob(jobId, options = {}) {
+  const timeoutMs = Number(options.timeoutMs || AI_REVIEW_POLL_TIMEOUT_MS);
+  const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
     await waitFor(AI_REVIEW_POLL_INTERVAL_MS);
@@ -3352,7 +3435,95 @@ async function pollAiReviewJob(jobId) {
     }
   }
 
-  throw new Error("AI 精批仍在后台处理中，请稍后保持页面开启再等一会，或稍后重新点击 AI 精批。");
+  throw createStillRunningError(jobId);
+}
+
+function getPendingReviewContainer(kind) {
+  return kind === "paragraph" ? els.paragraphResult : els.essayResult;
+}
+
+function renderPendingReviewRecovery() {
+  const pending = normalizePendingReview(state.pendingReview);
+  if (!pending?.jobId) {
+    return;
+  }
+
+  state.pendingReview = pending;
+  const container = getPendingReviewContainer(pending.kind);
+  if (!container || container.innerHTML.trim()) {
+    return;
+  }
+
+  container.innerHTML = renderAiStillRunningNotice({ job_id: pending.jobId });
+}
+
+async function resumePendingReview(jobId) {
+  const pending = normalizePendingReview(state.pendingReview);
+  if (!pending?.jobId || pending.jobId !== jobId) {
+    return;
+  }
+
+  const container = getPendingReviewContainer(pending.kind);
+  const prompt = pending.prompt || (pending.kind === "paragraph" ? currentParagraphPrompt() : activeEssayPrompt());
+  const localReview = pending.localReview || evaluateWriting(
+    pending.kind === "paragraph" ? els.paragraphText.value.trim() : els.essayText.value.trim(),
+    prompt,
+    pending.kind,
+  );
+
+  if (!container) {
+    return;
+  }
+
+  try {
+    if (pending.kind === "paragraph") {
+      setParagraphAiBusy(true, "查询结果中…");
+    } else {
+      setEssayAiBusy(true, "查询结果中…");
+    }
+    container.insertAdjacentHTML("beforeend", `
+      <div class="analysis-shell">
+        <h3>正在继续查询</h3>
+        <p>我会继续用这次已经创建好的任务号查结果，不会重新提交作文。</p>
+      </div>
+    `);
+    const finalPayload = await pollAiReviewJob(jobId);
+    applyAiEvaluationResult(container, prompt, localReview, finalPayload, {
+      ...pending.meta,
+      kind: pending.kind,
+    });
+  } catch (error) {
+    if (isStillRunningError(error)) {
+      container.insertAdjacentHTML("beforeend", renderAiStillRunningNotice({ job_id: jobId }));
+      return;
+    }
+    container.insertAdjacentHTML("beforeend", `
+      <div class="feedback feedback--danger">
+        <strong>继续查询失败</strong>
+        <p>${escapeHtml(error.message || "暂时查不到这次 AI 精批结果。")}</p>
+      </div>
+    `);
+  } finally {
+    if (pending.kind === "paragraph") {
+      setParagraphAiBusy(false);
+    } else {
+      setEssayAiBusy(false);
+    }
+  }
+}
+
+function handlePendingReviewAction(event) {
+  const button = event.target.closest("[data-review-action='resume']");
+  if (!button) {
+    return;
+  }
+  const jobId = String(button.dataset.reviewJobId || "").trim();
+  if (!jobId) {
+    return;
+  }
+  button.disabled = true;
+  button.textContent = "查询中…";
+  resumePendingReview(jobId);
 }
 
 async function evaluateEssayAi() {
@@ -3429,6 +3600,12 @@ async function evaluateEssayAi() {
       els.essayResult.innerHTML = "";
       renderLocalEvaluation(els.essayResult, localReview, { title: prompt.title, modeLabel: "本地快评" });
       els.essayResult.insertAdjacentHTML("beforeend", renderAiPendingEvaluation(payload.provider_label || backendStatus.label, payload));
+      rememberPendingReview(payload, prompt, localReview, {
+        title: prompt.title,
+        modeLabel: "本地快评",
+        kind: "essay",
+        archive: true,
+      });
       setEssayAiBusy(true, "AI 精批后台处理中…");
       const finalPayload = await pollAiReviewJob(payload.job_id);
       applyAiEvaluationResult(els.essayResult, prompt, localReview, finalPayload, {
@@ -3446,6 +3623,12 @@ async function evaluateEssayAi() {
       });
     }
   } catch (error) {
+    if (isStillRunningError(error)) {
+      els.essayResult.insertAdjacentHTML("beforeend", renderAiStillRunningNotice({
+        job_id: error.jobId || state.pendingReview?.jobId || "",
+      }));
+      return;
+    }
     const message = String(error.message || "AI 服务暂时无法处理这篇作文。当前已保留本地快评结果。");
     const friendlyMessage = /free-models-per-day|今日请求额度已经用完|解锁更多免费请求/i.test(message)
       ? "OpenRouter 免费模型今天的额度已经用完了，所以在线 AI 精批暂时不能继续使用。你可以先用本地快评，等额度重置后再试，或者给 OpenRouter 账户充值。"
@@ -3536,6 +3719,11 @@ async function evaluateParagraphAi() {
       els.paragraphResult.innerHTML = "";
       renderLocalEvaluation(els.paragraphResult, localReview, { title: prompt.title, modeLabel: "段落练习" });
       els.paragraphResult.insertAdjacentHTML("beforeend", renderAiPendingEvaluation(payload.provider_label || backendStatus.label, payload));
+      rememberPendingReview(payload, prompt, localReview, {
+        title: prompt.title,
+        modeLabel: "段落练习",
+        kind: "paragraph",
+      });
       setParagraphAiBusy(true, "AI 精批后台处理中…");
       const finalPayload = await pollAiReviewJob(payload.job_id);
       applyAiEvaluationResult(els.paragraphResult, prompt, localReview, finalPayload, {
@@ -3551,6 +3739,12 @@ async function evaluateParagraphAi() {
       });
     }
   } catch (error) {
+    if (isStillRunningError(error)) {
+      els.paragraphResult.insertAdjacentHTML("beforeend", renderAiStillRunningNotice({
+        job_id: error.jobId || state.pendingReview?.jobId || "",
+      }));
+      return;
+    }
     const message = String(error.message || "AI 服务暂时无法处理这段文字。当前已保留本地快评结果。");
     const friendlyMessage = /free-models-per-day|今日请求额度已经用完|解锁更多免费请求/i.test(message)
       ? "OpenRouter 免费模型今天的额度已经用完了，所以在线 AI 段落精批暂时不能继续使用。你可以先用本地快评，等额度重置后再试。"
