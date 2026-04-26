@@ -3,6 +3,7 @@ import {
   completeReviewJob,
   createReviewJob,
   failReviewJob,
+  getReviewJob,
   markReviewJobRunning,
   recordEssayArtifacts,
 } from "../../_lib/db.js";
@@ -79,7 +80,11 @@ async function processReviewJob(env, job) {
       review: result.review || result,
     });
 
-    await recordEssayArtifacts(env, completed, completed.review);
+    try {
+      await recordEssayArtifacts(env, completed, completed.review);
+    } catch {
+      // The review itself is the user-facing result. Archiving failures should not hide it.
+    }
   } catch (error) {
     await failReviewJob(env, job.id, error.message || error, {
       provider: job.provider,
@@ -87,6 +92,20 @@ async function processReviewJob(env, job) {
       review_model: job.review_model,
     });
   }
+}
+
+async function completeReviewNow(env, job) {
+  await processReviewJob(env, job);
+  const completed = await getReviewJob(env, job.id);
+
+  if (!completed) {
+    throw Object.assign(new Error("AI 精批任务写回失败。"), { status: 500 });
+  }
+  if (completed.status === "failed") {
+    throw Object.assign(new Error(completed.error || "AI 精批失败。"), { status: 502 });
+  }
+
+  return completed;
 }
 
 export const onRequestOptions = () => options();
@@ -138,17 +157,16 @@ export async function onRequestPost(context) {
       target_band: payload.target_band || "",
     });
 
-    context.waitUntil(processReviewJob(context.env, job));
+    const completed = await completeReviewNow(context.env, job);
 
     return json({
-      async: true,
-      job_id: job.id,
-      status: job.status,
+      async: false,
+      id: completed.id,
       provider,
-      provider_label: providerStatus.provider_label,
-      review_model: providerStatus.writing_review_model,
-      poll_url: `/api/ai/writing-review-status?id=${encodeURIComponent(job.id)}`,
-    }, 202);
+      provider_label: completed.provider_label || providerStatus.provider_label,
+      review_model: completed.review_model || providerStatus.writing_review_model,
+      review: completed.review,
+    });
   } catch (error) {
     return json({ error: error.message || "服务内部错误。" }, error.status || 500);
   }
