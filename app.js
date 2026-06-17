@@ -3592,7 +3592,6 @@ function renderAiPendingEvaluation(backendLabel, payload = {}) {
       <div class="tag-row">
         <span class="tag">AI 精批后台处理中</span>
         <span class="tag">${escapeHtml(backendLabel)}</span>
-        ${payload.review_model ? `<span class="tag">模型 ${escapeHtml(payload.review_model)}</span>` : ""}
         ${shortJobId ? `<span class="tag">任务 ${escapeHtml(shortJobId)}</span>` : ""}
       </div>
       <p>这次精批已经转到后台继续处理。你可以先看上面的本地快评，页面会自动轮询结果并补上完整 AI 批改。</p>
@@ -4162,7 +4161,6 @@ function renderAiEvaluation(prompt, payload) {
         <span class="tag">${escapeHtml(labelForExam(getPromptExam(prompt)))}</span>
         <span class="tag">${labelForTask(prompt.task)}</span>
         <span class="tag">${escapeHtml(backendLabel)}</span>
-        <span class="tag">模型 ${escapeHtml(payload.review_model || aiState.reviewModel || "")}</span>
         <span class="tag">${scoreView.totalLabel} ${scoreView.totalText}</span>
       </div>
       <div class="analysis-grid">
@@ -5491,7 +5489,7 @@ function updateAiStatusUI() {
 
   if (selectedBackend.available) {
     els.aiStatusChip.textContent = `${selectedBackend.label} 已连接`;
-    els.aiModelMeta.textContent = `当前精批模型：${selectedBackend.writingReviewModel || selectedBackend.reviewModel || "未返回模型名"}`;
+    els.aiModelMeta.textContent = "AI 精批通道已就绪，模型名已隐藏";
     els.aiHeroStatus.textContent = selectedBackend.label;
     els.aiSideMeta.textContent = `电子阅卷老师已上线，当前走 ${selectedBackend.label}。它会继续负责句子升级、词汇替换和结构复盘这些脏活累活。`;
     return;

@@ -168,7 +168,7 @@ function uniqueList(values) {
 function parseModelList(value) {
   return String(value || "")
     .split(/[\n,，;；]+/)
-    .map((item) => item.trim())
+    .map((item) => item.trim().replace(/^[A-Z0-9_]+\s*=\s*/i, "").trim())
     .filter(Boolean);
 }
 
@@ -185,6 +185,9 @@ function getOpenAICompatibleModelCandidates(endpoint) {
   if (endpoint?.label !== "GemAI") {
     return uniqueList(configuredModels);
   }
+  if (endpoint?.hasExplicitModelList) {
+    return uniqueList(configuredModels);
+  }
   return uniqueList([
     ...configuredModels,
     "google/gemini-3.1-pro-preview",
@@ -194,7 +197,6 @@ function getOpenAICompatibleModelCandidates(endpoint) {
     "google/gemini-3.1-flash",
     "gemini-2.5-flash",
     "google/gemini-2.5-flash",
-    "default",
   ]);
 }
 
@@ -269,17 +271,18 @@ function getOpenAICompatiblePrimary(env, reviewMode = "essay") {
     )
     : Number(env.OPENAI_COMPAT_TIMEOUT_MS || OPENAI_COMPAT_TIMEOUT_MS);
 
-  const configuredModel = String(
+  const configuredModelList = parseModelList(
     (reviewMode === "paragraph" ? env.OPENAI_PARAGRAPH_REVIEW_MODEL : "")
     || env.OPENAI_WRITING_REVIEW_MODEL
     || defaultModel,
-  ).trim();
+  );
+  const explicitModelList = parseModelList(
+    (reviewMode === "paragraph" ? env.OPENAI_PARAGRAPH_REVIEW_MODELS : "")
+    || env.OPENAI_WRITING_REVIEW_MODELS,
+  );
   const configuredModels = normalizeOpenAICompatibleModelList(label, [
-    ...parseModelList(
-      (reviewMode === "paragraph" ? env.OPENAI_PARAGRAPH_REVIEW_MODELS : "")
-      || env.OPENAI_WRITING_REVIEW_MODELS,
-    ),
-    configuredModel,
+    ...explicitModelList,
+    ...configuredModelList,
   ]);
 
   return {
@@ -288,6 +291,7 @@ function getOpenAICompatiblePrimary(env, reviewMode = "essay") {
     baseUrl,
     model: configuredModels[0],
     models: configuredModels,
+    hasExplicitModelList: explicitModelList.length > 0,
     timeoutMs,
   };
 }
@@ -312,17 +316,18 @@ function getOpenAICompatibleFallback(env, reviewMode = "essay") {
     )
     : Number(env.OPENAI_COMPAT_FALLBACK_TIMEOUT_MS || OPENAI_COMPAT_TIMEOUT_MS);
 
-  const configuredModel = String(
+  const configuredModelList = parseModelList(
     (reviewMode === "paragraph" ? env.OPENAI_COMPAT_FALLBACK_PARAGRAPH_MODEL : "")
     || env.OPENAI_COMPAT_FALLBACK_WRITING_MODEL
     || defaultModel,
-  ).trim();
+  );
+  const explicitModelList = parseModelList(
+    (reviewMode === "paragraph" ? env.OPENAI_COMPAT_FALLBACK_PARAGRAPH_MODELS : "")
+    || env.OPENAI_COMPAT_FALLBACK_WRITING_MODELS,
+  );
   const configuredModels = normalizeOpenAICompatibleModelList(label, [
-    ...parseModelList(
-      (reviewMode === "paragraph" ? env.OPENAI_COMPAT_FALLBACK_PARAGRAPH_MODELS : "")
-      || env.OPENAI_COMPAT_FALLBACK_WRITING_MODELS,
-    ),
-    configuredModel,
+    ...explicitModelList,
+    ...configuredModelList,
   ]);
 
   return {
@@ -331,6 +336,7 @@ function getOpenAICompatibleFallback(env, reviewMode = "essay") {
     baseUrl,
     model: configuredModels[0],
     models: configuredModels,
+    hasExplicitModelList: explicitModelList.length > 0,
     timeoutMs,
   };
 }
@@ -972,7 +978,7 @@ async function requestFromOpenAICompatible(endpoint, promptPayload, userInput) {
 
   if (attemptedErrors.length) {
     throw createError(
-      `${endpoint.label} 当前没有可用模型，已尝试：${models.join(", ")}。最后错误：${lastError?.message || "请求失败"}。请检查模型名是否和该 key 的权限匹配。`,
+      `${endpoint.label} 当前没有可用的精批模型通道。请检查模型名是否和该 key 的权限匹配，或在模型列表里换一个可用模型。`,
       lastError?.status || 502,
     );
   }
