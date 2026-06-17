@@ -145,6 +145,22 @@ function providerLabelFromBaseUrl(baseUrl) {
   return "OpenAI";
 }
 
+function normalizeOpenAICompatibleModelName(label, model) {
+  const rawModel = String(model || "").trim();
+  if (label !== "GemAI") {
+    return rawModel;
+  }
+
+  const plainModel = rawModel.replace(/^\[[^\]]+\]/, "").trim();
+  if (/gemini-3\.1-pro-preview/i.test(plainModel)) {
+    return "gemini-3.1-pro-preview";
+  }
+  if (/gemini-3-pro-preview/i.test(plainModel)) {
+    return "gemini-3-pro-preview";
+  }
+  return plainModel || rawModel;
+}
+
 function getReviewMode(localMetrics) {
   return String(localMetrics?.reviewMode || "essay").trim().toLowerCase() === "paragraph"
     ? "paragraph"
@@ -211,15 +227,17 @@ function getOpenAICompatiblePrimary(env, reviewMode = "essay") {
     )
     : Number(env.OPENAI_COMPAT_TIMEOUT_MS || OPENAI_COMPAT_TIMEOUT_MS);
 
+  const configuredModel = String(
+    (reviewMode === "paragraph" ? env.OPENAI_PARAGRAPH_REVIEW_MODEL : "")
+    || env.OPENAI_WRITING_REVIEW_MODEL
+    || defaultModel,
+  ).trim();
+
   return {
     label,
     apiKey: String(env.OPENAI_API_KEY || "").trim(),
     baseUrl,
-    model: String(
-      (reviewMode === "paragraph" ? env.OPENAI_PARAGRAPH_REVIEW_MODEL : "")
-      || env.OPENAI_WRITING_REVIEW_MODEL
-      || defaultModel,
-    ).trim(),
+    model: normalizeOpenAICompatibleModelName(label, configuredModel),
     timeoutMs,
   };
 }
@@ -244,15 +262,17 @@ function getOpenAICompatibleFallback(env, reviewMode = "essay") {
     )
     : Number(env.OPENAI_COMPAT_FALLBACK_TIMEOUT_MS || OPENAI_COMPAT_TIMEOUT_MS);
 
+  const configuredModel = String(
+    (reviewMode === "paragraph" ? env.OPENAI_COMPAT_FALLBACK_PARAGRAPH_MODEL : "")
+    || env.OPENAI_COMPAT_FALLBACK_WRITING_MODEL
+    || defaultModel,
+  ).trim();
+
   return {
     label,
     apiKey,
     baseUrl,
-    model: String(
-      (reviewMode === "paragraph" ? env.OPENAI_COMPAT_FALLBACK_PARAGRAPH_MODEL : "")
-      || env.OPENAI_COMPAT_FALLBACK_WRITING_MODEL
-      || defaultModel,
-    ).trim(),
+    model: normalizeOpenAICompatibleModelName(label, configuredModel),
     timeoutMs,
   };
 }
