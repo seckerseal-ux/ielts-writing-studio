@@ -921,16 +921,25 @@ async function requestFromOpenAICompatible(endpoint, promptPayload, userInput) {
 
   const models = getOpenAICompatibleModelCandidates(endpoint);
   let lastError = null;
+  const attemptedErrors = [];
 
   for (const model of models) {
     try {
       return await requestFromOpenAICompatibleModel(endpoint, model, promptPayload, userInput);
     } catch (error) {
       lastError = error;
+      attemptedErrors.push(`${model}: ${error.message || "请求失败"}`);
       if (endpoint.label !== "GemAI" || !shouldRetryGemAiModel(error)) {
         throw error;
       }
     }
+  }
+
+  if (endpoint.label === "GemAI" && attemptedErrors.length) {
+    throw createError(
+      `${endpoint.label} 当前 key 没有可用模型权限，已尝试：${models.join(", ")}。最后错误：${lastError?.message || "请求失败"}。请在 GemAI 后台给这个 key 开通其中一个模型，或把环境变量 OPENAI_WRITING_REVIEW_MODEL 改成该 key 实际可用的模型名。`,
+      lastError?.status || 502,
+    );
   }
 
   throw lastError || createError(`${endpoint.label} 暂时没有可用模型。`, 502);
