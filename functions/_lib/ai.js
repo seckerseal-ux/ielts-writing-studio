@@ -806,6 +806,10 @@ async function fetchJson(url, init, timeoutMs, label) {
     const message = payload?.error?.message || payload?.message || payload?.error || rawText || "未知错误";
     throw createError(`${label} 接口返回错误：${message}`, response.status || 502);
   }
+  if (payload?.error && !payload.choices && !payload.output && !payload.candidates) {
+    const message = payload.error?.message || payload.message || payload.error || "未知错误";
+    throw createError(`${label} 接口返回错误：${message}`, 502);
+  }
 
   return payload;
 }
@@ -827,6 +831,22 @@ async function requestFromOpenAICompatible(endpoint, promptPayload, userInput) {
     throw createError(`缺少 ${endpoint?.label || "OpenAI 兼容"} 的 Base URL。`, 503);
   }
 
+  const requestBody = {
+    model: endpoint.model,
+    messages: [
+      { role: "system", content: WRITING_REVIEW_INSTRUCTIONS },
+      {
+        role: "user",
+        content: buildReviewMessageContent(promptPayload, userInput),
+      },
+    ],
+    temperature: 0.2,
+    stream: false,
+  };
+  if (endpoint.label !== "GemAI") {
+    requestBody.response_format = { type: "json_object" };
+  }
+
   const response = await fetchJson(
     `${endpoint.baseUrl}/chat/completions`,
     {
@@ -836,19 +856,7 @@ async function requestFromOpenAICompatible(endpoint, promptPayload, userInput) {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify({
-        model: endpoint.model,
-        messages: [
-          { role: "system", content: WRITING_REVIEW_INSTRUCTIONS },
-          {
-            role: "user",
-            content: buildReviewMessageContent(promptPayload, userInput),
-          },
-        ],
-        temperature: 0.2,
-        stream: false,
-        response_format: { type: "json_object" },
-      }),
+      body: JSON.stringify(requestBody),
     },
     endpoint.timeoutMs,
     endpoint.label,
