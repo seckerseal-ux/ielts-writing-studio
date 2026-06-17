@@ -1280,6 +1280,203 @@ const essayPrompts = [
     ideaHints: ["可以把图画写成两组人的对照，这样结构会很稳。", "结尾别只喊口号，落到 balanced use of technology 会更实在。"],
     exampleIdeas: ["例如，你可以写 technology is useful, but without self-discipline it can quietly erode time for reading and reflection。"],
   },
+  {
+    id: "essayK2026S1",
+    exam: "kaoyan",
+    task: "small",
+    title: "26预测小作文 1：回复书法学习咨询",
+    genre: "reply email",
+    source: "26考研写作预测",
+    prompt: "Read the following email from an international student and write a reply.\n\nDear Li Ming,\n\nI’m interested in learning about Chinese calligraphy. Could you recommend a beginner-friendly workshop or course? Also, do you know if there are any online resources?\n\nThanks,\nLinda\n\nWrite your reply in about 100 words on the ANSWER SHEET. Do not use your own name. Use “Li Ming” instead.",
+    details: ["来信人想了解中国书法", "需要推荐适合初学者的 workshop 或 course", "还要补充 online resources"],
+    requirements: ["约 100 词", "回复两个问题", "署名使用 Li Ming", "语气友好、信息具体"],
+    keywords: ["reply", "calligraphy", "workshop", "course", "online resources", "Li Ming"],
+    categories: ["应用文", "答复信", "文化"],
+    minimumWords: 100,
+    topics: ["中国文化", "校园", "回复"],
+    ideaHints: ["开头先回应兴趣，再推荐一个线下入门课，最后给线上资源和祝愿。", "别只写 I recommend a course，要说它为什么适合 beginner。"],
+    exampleIdeas: ["比如可以推荐 a weekend calligraphy workshop at the university cultural centre，因为老师会从 basic strokes 教起。"],
+  },
+  {
+    id: "essayK2026S2",
+    exam: "kaoyan",
+    task: "small",
+    title: "26预测小作文 2：邀请外教参加诗歌朗诵夜",
+    genre: "email invitation",
+    source: "26考研写作预测",
+    prompt: "Suppose your department will hold a “Chinese Poetry Recitation Night” for international students. Write an email to your foreign teacher, inviting him/her to participate, and briefly introduce the meaning and highlights of the event.\n\nYou should write about 100 words on the ANSWER SHEET. Do not use your own name. Use “Li Ming” instead.",
+    details: ["部门将举办 Chinese Poetry Recitation Night", "邀请外教参加", "简要介绍活动意义和亮点"],
+    requirements: ["约 100 词", "邀请目的清楚", "活动意义和亮点都要写到", "署名使用 Li Ming"],
+    keywords: ["invite", "Chinese poetry", "recitation night", "international students", "foreign teacher"],
+    categories: ["应用文", "邀请", "文化交流"],
+    minimumWords: 100,
+    topics: ["中国文化", "校园", "活动", "邀请"],
+    ideaHints: ["邀请信结构可以是：说明活动 -> 为什么邀请对方 -> 期待参加。", "亮点不用堆太多，写 poetry reading, brief introduction and student interaction 就够稳。"],
+    exampleIdeas: ["例如可以写 the event will help international students appreciate the rhythm and imagery of classical Chinese poetry。"],
+  },
+  {
+    id: "essayK2026S3",
+    exam: "kaoyan",
+    task: "small",
+    title: "26预测小作文 3：推荐朋友加入青年志愿者组织",
+    genre: "recommendation letter",
+    source: "26考研写作预测",
+    prompt: "Your friend wants to join a youth volunteer organization. Write a letter to recommend him/her to the organization, introducing his/her strengths and explaining why he/she is suitable for the role.\n\nYou should write about 100 words on the ANSWER SHEET. Do not use your own name. Use “Li Ming” instead.",
+    details: ["朋友想加入 youth volunteer organization", "需要介绍朋友优点", "解释为什么适合志愿者角色"],
+    requirements: ["约 100 词", "推荐对象和目的明确", "优点要和志愿服务匹配", "署名使用 Li Ming"],
+    keywords: ["recommend", "youth volunteer organization", "strengths", "suitable", "role"],
+    categories: ["应用文", "推荐信", "志愿服务"],
+    minimumWords: 100,
+    topics: ["志愿服务", "社会责任", "推荐"],
+    ideaHints: ["推荐信不要只夸人好，要把优点和岗位需求扣在一起。", "可写 patient, responsible, experienced in campus volunteer activities。"],
+    exampleIdeas: ["例如可以说 he has helped organize several community clean-up events and is good at communicating with people of different ages。"],
+  },
+  {
+    id: "essayK2026S4",
+    exam: "kaoyan",
+    task: "small",
+    title: "26预测小作文 4：AI 与学术诚信讲座通知",
+    genre: "notice",
+    source: "26考研写作预测",
+    prompt: "Your school is going to hold a mandatory lecture on “AI and Academic Integrity” next week. Write a notice to all students to\n1) inform them the detailed information about the lecture, and\n2) invite them to participate.\n\nYou should write about 100 words on the ANSWER SHEET. Do not use your own name. Use “Li Ming” instead.",
+    details: ["学校下周举办 mandatory lecture", "主题是 AI and Academic Integrity", "通知全体学生讲座信息并邀请参加"],
+    requirements: ["约 100 词", "时间地点对象要清楚", "notice 格式简洁", "署名使用 Li Ming"],
+    keywords: ["notice", "AI", "academic integrity", "mandatory lecture", "participate"],
+    categories: ["应用文", "通知", "科技伦理"],
+    minimumWords: 100,
+    topics: ["科技", "校园", "通知"],
+    ideaHints: ["通知可以直接写 who, when, where, what，然后补一句 why it matters。", "mandatory 不等于语气凶，可以清楚但保持正式。"],
+    exampleIdeas: ["例如可以写 the lecture will explain how to use AI tools responsibly and avoid plagiarism in academic work。"],
+  },
+  {
+    id: "essayK2026S5",
+    exam: "kaoyan",
+    task: "small",
+    title: "26预测小作文 5：体育设施建议信并申请志愿工作",
+    genre: "suggestion and application email",
+    source: "26考研写作预测",
+    prompt: "Your university is planning to build a new sports facility. Write an email to the university president to\n1) make some suggestions on how to make the facility more student-friendly and eco-friendly, and\n2) apply to participate in voluntary work.\n\nYou should write about 100 words on the ANSWER SHEET. Do not use your own name. Use “Li Ming” instead.",
+    details: ["学校计划建设新的 sports facility", "提出 student-friendly 和 eco-friendly 建议", "申请参与志愿工作"],
+    requirements: ["约 100 词", "建议和申请都要覆盖", "建议要具体可执行", "署名使用 Li Ming"],
+    keywords: ["sports facility", "suggestions", "student-friendly", "eco-friendly", "voluntary work"],
+    categories: ["应用文", "建议信", "申请"],
+    minimumWords: 100,
+    topics: ["校园", "环保", "志愿服务", "建议"],
+    ideaHints: ["这题是组合拳：先给建议，再申请参与，别只写成单纯建议信。", "建议可以围绕 opening hours, green materials, bicycle parking, water-saving facilities。"],
+    exampleIdeas: ["例如可以建议 setting up shaded rest areas and using energy-saving lighting so that students can exercise comfortably while reducing waste。"],
+  },
+  {
+    id: "essayK2026L1",
+    exam: "kaoyan",
+    task: "large",
+    title: "26预测大作文 1：AI 工具使用与独立思考",
+    genre: "picture and chart commentary",
+    source: "26考研写作预测",
+    prompt: "Write an essay based on the picture and the chart below. In your essay, you should 1) describe the picture and the chart briefly, 2) interpret the implied meaning, and 3) give your comments.\n\nWrite your answer in 160-200 words on the ANSWER SHEET. (20 points)",
+    details: ["图画主题：人工智能与独立思考", "一名学生通过自己的思考理解问题，另一名学生依赖 AI 一秒完成", "图表显示某高校学生使用 AI 学习工具的比例快速上升，到 2024 年达到较高水平"],
+    requirements: ["160-200 词", "先描述图画和图表", "再解释寓意", "最后给出评论或建议"],
+    keywords: ["AI", "independent thinking", "learning tools", "students", "critical thinking"],
+    categories: ["图画+图表", "科技", "教育评论"],
+    minimumWords: 160,
+    topics: ["科技", "教育", "校园"],
+    image_url: "./assets/kaoyan-2026/kaoyan-2026-large-01-ai-thinking.png",
+    image_alt: "人工智能与独立思考图画及某高校学生使用 AI 学习工具比例变化图",
+    ideaHints: ["先用 2 句描述图和趋势，再把主线扣到 AI convenience vs independent thinking。", "评论部分别妖魔化 AI，比较稳的观点是 use AI as a tool, not as a substitute for thinking。"],
+    exampleIdeas: ["例如可以写 a student may use AI to check an outline after thinking independently, rather than copying a ready-made answer without reflection。"],
+  },
+  {
+    id: "essayK2026L2",
+    exam: "kaoyan",
+    task: "large",
+    title: "26预测大作文 2：是否赞同 AI 依赖削弱批判性思维",
+    genre: "article response",
+    source: "26考研写作预测",
+    prompt: "Read the following excerpt from an article and write an essay. In your essay, you should explain whether or to what extent you agree with the author. Support your argument with reasons and relevant examples. Write your answer in 160-200 words on the ANSWER SHEET. (20 points)\n\nMany students, in any field, rely on AI to give them quick, final answers — and we risk losing the chance to build strong critical thinking skills. This fast reliance might feel like the best way to be efficient. But real learning happens when we carefully check the machine's conclusions. Studies show that replacing your own thinking with AI’s answers is not helpful and actually makes our ability to think deeply weaker over time. So, choosing not to rely only on AI shows stronger critical thought. When we look at AI results with doubt, we are seen as less mentally lazy and more able to produce original ideas.",
+    details: ["文字材料认为学生过度依赖 AI 最终答案会削弱深度思考", "需要说明是否或多大程度赞同作者", "要用理由和相关例子支撑观点"],
+    requirements: ["160-200 词", "明确 agree / partly agree / disagree 的程度", "不要只复述材料", "至少给出一个具体例子"],
+    keywords: ["AI reliance", "critical thinking", "quick answers", "real learning", "original ideas"],
+    categories: ["文字材料", "科技", "观点论证"],
+    minimumWords: 160,
+    topics: ["科技", "教育", "思辨"],
+    ideaHints: ["这类题不是图表题，重点是回应 author 的观点，所以开头要直接表态。", "主体可以写 over-reliance weakens reasoning，再补 balanced use of AI can still support learning。"],
+    exampleIdeas: ["例如可以写 students who ask AI for a finished essay may miss the process of comparing sources and organizing arguments。"],
+  },
+  {
+    id: "essayK2026L3",
+    exam: "kaoyan",
+    task: "large",
+    title: "26预测大作文 3：外国年轻人感兴趣的中国元素",
+    genre: "static chart commentary",
+    source: "26考研写作预测",
+    prompt: "Write an essay based on the chart below. In your essay, you should 1) describe and interpret the chart, and 2) give your comments.\n\nWrite your answer in about 150 words on the ANSWER SHEET. (15 points)",
+    details: ["图表主题：外国年轻人最感兴趣的中国元素（2023 年调查）", "传统节日 28%，美食 25%，中医 18%，现代科技 17%，古典文学 12%", "传统文化与日常生活类元素更容易吸引外国年轻人"],
+    requirements: ["约 150 词", "描述主要占比和排序", "解释背后原因", "给出文化传播建议"],
+    keywords: ["Chinese elements", "foreign young people", "traditional festivals", "food", "culture"],
+    categories: ["图表作文", "文化", "静态数据"],
+    minimumWords: 150,
+    topics: ["中国文化", "文化交流", "社会"],
+    image_url: "./assets/kaoyan-2026/kaoyan-2026-large-02-culture-pie.png",
+    image_alt: "外国年轻人最感兴趣的中国元素饼图",
+    ideaHints: ["先写 traditional festivals and food take the largest shares，再解释它们更 visible and accessible。", "评论可以落到 cultural exchange should combine tradition with modern presentation。"],
+    exampleIdeas: ["例如可以写 short videos about festival customs or food-making can make Chinese culture easier for foreign young people to approach。"],
+  },
+  {
+    id: "essayK2026L4",
+    exam: "kaoyan",
+    task: "large",
+    title: "26预测大作文 4：绿色消费与过度包装变化",
+    genre: "dynamic chart commentary",
+    source: "26考研写作预测",
+    prompt: "Write an essay based on the chart below. In your essay, you should 1) describe and interpret the chart, and 2) give your comments.\n\nWrite your answer in about 150 words on the ANSWER SHEET. (15 points)",
+    details: ["图表主题：2018-2023 年中国消费者支出变化", "绿色产品支出比例由约 15% 上升至约 35%", "二手商品由约 8% 上升至约 22%", "过度包装商品由约 40% 下降至约 18%"],
+    requirements: ["约 150 词", "写出上升和下降两组趋势", "解释绿色消费意识增强", "评论时要落到个人和企业行动"],
+    keywords: ["green products", "second-hand goods", "over-packaged products", "consumption", "environment"],
+    categories: ["图表作文", "动态数据", "环保消费"],
+    minimumWords: 150,
+    topics: ["环保", "消费", "社会"],
+    image_url: "./assets/kaoyan-2026/kaoyan-2026-large-03-green-consumption.png",
+    image_alt: "2018-2023 年中国消费者绿色产品、二手商品和过度包装商品支出变化图",
+    ideaHints: ["用 while / by contrast 写两类趋势会很清楚：绿色和二手上升，过度包装下降。", "评论不要只喊环保口号，可以写 consumer awareness, policy guidance and business responsibility。"],
+    exampleIdeas: ["例如可以写 more shoppers now choose refillable products or second-hand platforms because they are both affordable and environmentally friendly。"],
+  },
+  {
+    id: "essayK2026L5",
+    exam: "kaoyan",
+    task: "large",
+    title: "26预测大作文 5：持续成长与终身学习",
+    genre: "picture commentary",
+    source: "26考研写作预测",
+    prompt: "Write an essay based on the picture below. In your essay, you should 1) describe the picture briefly, 2) interpret the implied meaning, and 3) give your comments.\n\nWrite your answer in 160-200 words on the ANSWER SHEET. (20 points)",
+    details: ["图画中人物沿着书本台阶不断向上", "关键词为“持续成长”", "寓意可落在终身学习、知识积累和个人发展"],
+    requirements: ["160-200 词", "先简洁描述画面", "点出持续成长的寓意", "评论要有现实建议"],
+    keywords: ["sustainable growth", "lifelong learning", "books", "personal development", "education"],
+    categories: ["图画作文", "教育", "成长"],
+    minimumWords: 160,
+    topics: ["教育", "成长", "学习"],
+    image_url: "./assets/kaoyan-2026/kaoyan-2026-large-04-sustainable-growth.png",
+    image_alt: "持续成长与终身学习主题图画",
+    ideaHints: ["图画描述别超过两句，马上转向 continuous learning is a lifelong process。", "主体可以写 knowledge accumulation, adaptability and self-discipline。"],
+    exampleIdeas: ["例如可以写 graduates who keep learning new digital skills are more likely to adapt to changes in the workplace。"],
+  },
+  {
+    id: "essayK2026L6",
+    exam: "kaoyan",
+    task: "large",
+    title: "26预测大作文 6：社区养老服务覆盖率变化",
+    genre: "dynamic chart commentary",
+    source: "26考研写作预测",
+    prompt: "Write an essay based on the chart below. In your essay, you should 1) describe and interpret the chart, and 2) give your comments.\n\nWrite your answer in about 150 words on the ANSWER SHEET. (15 points)",
+    details: ["图表主题：2021-2024 年某市社区养老服务覆盖率变化情况", "覆盖率从约 35% 稳步上升至约 82%", "体现社区公共服务和养老保障改善"],
+    requirements: ["约 150 词", "突出稳定上升趋势", "解释人口老龄化和公共服务投入", "评论可写继续提升服务质量"],
+    keywords: ["elderly care", "community services", "coverage rate", "public service", "aging society"],
+    categories: ["图表作文", "动态数据", "社会养老"],
+    minimumWords: 150,
+    topics: ["社会", "养老", "公共服务"],
+    image_url: "./assets/kaoyan-2026/kaoyan-2026-large-05-elderly-care.png",
+    image_alt: "2021-2024 年某市社区养老服务覆盖率变化折线图",
+    ideaHints: ["先写 coverage rate rose steadily and almost doubled，再解释这反映了 stronger community support。", "评论可以从 aging society, accessible services 和 quality improvement 三个词展开。"],
+    exampleIdeas: ["例如可以写 more community centres now provide meal delivery, health checks and daytime care for elderly residents。"],
+  },
 ];
 
 const TASK2_GUIDANCE_BANK = {
@@ -3001,6 +3198,29 @@ function getCustomPromptImageAttachment() {
   };
 }
 
+function getPromptImageDisplay(prompt) {
+  const attachment = prompt?.image_attachment;
+  if (attachment?.data_url) {
+    return {
+      src: attachment.data_url,
+      name: attachment.name || "题目图片",
+      meta: attachment.width && attachment.height
+        ? `${attachment.width} × ${attachment.height}`
+        : "自定义题图",
+      fromAttachment: true,
+    };
+  }
+  if (prompt?.image_url) {
+    return {
+      src: prompt.image_url,
+      name: prompt.image_alt || prompt.title || "题目图片",
+      meta: prompt.image_alt || "题库题图",
+      fromAttachment: false,
+    };
+  }
+  return null;
+}
+
 function renderCustomPromptImagePreview() {
   if (!els.customPromptImagePreview) {
     return;
@@ -3042,6 +3262,60 @@ function loadImageElement(dataUrl) {
     image.onerror = () => reject(new Error("这张图片看起来不太能被正常打开。"));
     image.src = dataUrl;
   });
+}
+
+function resolvePromptAssetUrl(imageUrl) {
+  try {
+    return new URL(imageUrl, window.location.href).href;
+  } catch {
+    return imageUrl;
+  }
+}
+
+async function createPromptImageAttachmentFromUrl(imageUrl, fallbackName = "prompt-image") {
+  const response = await fetch(resolvePromptAssetUrl(imageUrl), {
+    method: "GET",
+    cache: "force-cache",
+  });
+  if (!response.ok) {
+    throw new Error("题库题图读取失败。");
+  }
+  const blob = await response.blob();
+  if (!String(blob.type || "").startsWith("image/")) {
+    throw new Error("题库题图格式不对。");
+  }
+  const dataUrl = await readFileAsDataUrl(blob);
+  if (dataUrl.length > MAX_CUSTOM_PROMPT_IMAGE_DATA_URL_LENGTH) {
+    throw new Error("题库题图有点大，已改为文字题干批改。");
+  }
+  const image = await loadImageElement(dataUrl);
+  return {
+    data_url: dataUrl,
+    name: fallbackName,
+    mime_type: blob.type || "image/png",
+    width: image.width || 0,
+    height: image.height || 0,
+  };
+}
+
+async function buildPromptPayloadForAiReview(prompt) {
+  const normalizedPrompt = normalizePromptDefinition(prompt);
+  if (normalizedPrompt.image_attachment?.data_url || !normalizedPrompt.image_url) {
+    return normalizedPrompt;
+  }
+
+  try {
+    const imageAttachment = await createPromptImageAttachmentFromUrl(
+      normalizedPrompt.image_url,
+      normalizedPrompt.image_alt || normalizedPrompt.title || "prompt-image",
+    );
+    return {
+      ...normalizedPrompt,
+      image_attachment: imageAttachment,
+    };
+  } catch {
+    return normalizedPrompt;
+  }
 }
 
 async function normalizePromptImageFile(file) {
@@ -3136,6 +3410,7 @@ function renderPromptPanel(prompt, mode) {
   const requirements = prompt.checklist || prompt.requirements || [];
   const categories = (prompt.categories || []).map((category) => `<span class="tag">${escapeHtml(category)}</span>`).join("");
   const wordTarget = getPromptWordTargetLabel(prompt, mode);
+  const promptImage = getPromptImageDisplay(prompt);
 
   let related = phraseBank
     .filter((item) => getScopedExam(item) === getPromptExam(prompt) && item.task === prompt.task && (prompt.categories || []).includes(item.category))
@@ -3177,12 +3452,12 @@ function renderPromptPanel(prompt, mode) {
       <h3>${escapeHtml(prompt.title)}</h3>
       <p>${escapeHtml(prompt.prompt)}</p>
     </div>
-    ${prompt.image_attachment?.data_url ? `
+    ${promptImage ? `
       <figure class="prompt-image-card prompt-image-card--inline">
-        <img src="${escapeHtml(prompt.image_attachment.data_url)}" alt="${escapeHtml(prompt.image_attachment.name || "题目图片")}" />
+        <img src="${escapeHtml(promptImage.src)}" alt="${escapeHtml(promptImage.name)}" />
         <figcaption>
           <strong>题图已附上</strong>
-          <span>${escapeHtml(prompt.image_attachment.name || "自定义题目图片")}</span>
+          <span>${escapeHtml(promptImage.meta || promptImage.name)}</span>
         </figcaption>
       </figure>
     ` : ""}
@@ -3562,6 +3837,7 @@ async function evaluateEssayAi() {
 
   try {
     setEssayAiBusy(true, "AI 精批提交中…");
+    const promptPayload = await buildPromptPayloadForAiReview(prompt);
     const response = await fetch("/api/ai/writing-review", {
       method: "POST",
       headers: {
@@ -3571,7 +3847,7 @@ async function evaluateEssayAi() {
       body: JSON.stringify({
         backend: selectedBackend,
         device_id: getCloudDeviceId(),
-        prompt_payload: prompt,
+        prompt_payload: promptPayload,
         essay_text: text,
         target_band: getReviewTargetDescriptor(prompt),
         local_metrics: {
@@ -3680,6 +3956,7 @@ async function evaluateParagraphAi() {
 
   try {
     setParagraphAiBusy(true, "AI 精批提交中…");
+    const promptPayload = await buildPromptPayloadForAiReview(prompt);
     const response = await fetch("/api/ai/writing-review", {
       method: "POST",
       headers: {
@@ -3689,7 +3966,7 @@ async function evaluateParagraphAi() {
       body: JSON.stringify({
         backend: selectedBackend,
         device_id: getCloudDeviceId(),
-        prompt_payload: prompt,
+        prompt_payload: promptPayload,
         essay_text: text,
         target_band: getReviewTargetDescriptor(prompt),
         local_metrics: {
