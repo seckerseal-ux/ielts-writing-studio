@@ -158,7 +158,7 @@ function normalizeOpenAICompatibleModelName(label, model) {
   if (/gemini-3-pro-preview/i.test(plainModel)) {
     return "gemini-3-pro-preview";
   }
-  return plainModel || rawModel;
+  return rawModel;
 }
 
 function uniqueList(values) {
