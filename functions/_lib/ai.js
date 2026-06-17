@@ -165,13 +165,28 @@ function uniqueList(values) {
   return [...new Set(values.map((value) => String(value || "").trim()).filter(Boolean))];
 }
 
+function parseModelList(value) {
+  return String(value || "")
+    .split(/[\n,，;；]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeOpenAICompatibleModelList(label, values) {
+  return uniqueList(
+    values.map((model) => normalizeOpenAICompatibleModelName(label, model)),
+  );
+}
+
 function getOpenAICompatibleModelCandidates(endpoint) {
-  const primaryModel = String(endpoint?.model || "").trim();
+  const configuredModels = Array.isArray(endpoint?.models) && endpoint.models.length
+    ? endpoint.models
+    : [endpoint?.model];
   if (endpoint?.label !== "GemAI") {
-    return uniqueList([primaryModel]);
+    return uniqueList(configuredModels);
   }
   return uniqueList([
-    primaryModel,
+    ...configuredModels,
     "google/gemini-3.1-pro-preview",
     "gemini-3.1-flash-lite",
     "google/gemini-3.1-flash-lite",
@@ -259,12 +274,20 @@ function getOpenAICompatiblePrimary(env, reviewMode = "essay") {
     || env.OPENAI_WRITING_REVIEW_MODEL
     || defaultModel,
   ).trim();
+  const configuredModels = normalizeOpenAICompatibleModelList(label, [
+    ...parseModelList(
+      (reviewMode === "paragraph" ? env.OPENAI_PARAGRAPH_REVIEW_MODELS : "")
+      || env.OPENAI_WRITING_REVIEW_MODELS,
+    ),
+    configuredModel,
+  ]);
 
   return {
     label,
     apiKey: String(env.OPENAI_API_KEY || "").trim(),
     baseUrl,
-    model: normalizeOpenAICompatibleModelName(label, configuredModel),
+    model: configuredModels[0],
+    models: configuredModels,
     timeoutMs,
   };
 }
@@ -294,12 +317,20 @@ function getOpenAICompatibleFallback(env, reviewMode = "essay") {
     || env.OPENAI_COMPAT_FALLBACK_WRITING_MODEL
     || defaultModel,
   ).trim();
+  const configuredModels = normalizeOpenAICompatibleModelList(label, [
+    ...parseModelList(
+      (reviewMode === "paragraph" ? env.OPENAI_COMPAT_FALLBACK_PARAGRAPH_MODELS : "")
+      || env.OPENAI_COMPAT_FALLBACK_WRITING_MODELS,
+    ),
+    configuredModel,
+  ]);
 
   return {
     label,
     apiKey,
     baseUrl,
-    model: normalizeOpenAICompatibleModelName(label, configuredModel),
+    model: configuredModels[0],
+    models: configuredModels,
     timeoutMs,
   };
 }
@@ -867,7 +898,7 @@ function shouldRetryWithFallback(error) {
   if ([408, 409, 429, 500, 502, 503, 504].includes(status)) {
     return true;
   }
-  return /timeout|timed out|rate limit|quota|exceeded|too many|overloaded|busy|temporar|unavailable|fetch failed|invalid json|无法解析的 json|malformed json/.test(message);
+  return /timeout|timed out|rate limit|quota|exceeded|too many|overloaded|busy|temporar|unavailable|fetch failed|invalid json|无法解析的 json|malformed json|no access to model|model .*not|model.*unsupported|not support/.test(message);
 }
 
 async function requestFromOpenAICompatibleModel(endpoint, model, promptPayload, userInput) {
@@ -923,21 +954,25 @@ async function requestFromOpenAICompatible(endpoint, promptPayload, userInput) {
   let lastError = null;
   const attemptedErrors = [];
 
-  for (const model of models) {
+  for (const [index, model] of models.entries()) {
     try {
       return await requestFromOpenAICompatibleModel(endpoint, model, promptPayload, userInput);
     } catch (error) {
       lastError = error;
       attemptedErrors.push(`${model}: ${error.message || "请求失败"}`);
-      if (endpoint.label !== "GemAI" || !shouldRetryGemAiModel(error)) {
+      const hasNextModel = index < models.length - 1;
+      const canRetryModel = endpoint.label === "GemAI"
+        ? shouldRetryGemAiModel(error)
+        : shouldRetryWithFallback(error);
+      if (!hasNextModel || !canRetryModel) {
         throw error;
       }
     }
   }
 
-  if (endpoint.label === "GemAI" && attemptedErrors.length) {
+  if (attemptedErrors.length) {
     throw createError(
-      `${endpoint.label} 当前 key 没有可用模型权限，已尝试：${models.join(", ")}。最后错误：${lastError?.message || "请求失败"}。请在 GemAI 后台给这个 key 开通其中一个模型，或把环境变量 OPENAI_WRITING_REVIEW_MODEL 改成该 key 实际可用的模型名。`,
+      `${endpoint.label} 当前没有可用模型，已尝试：${models.join(", ")}。最后错误：${lastError?.message || "请求失败"}。请检查模型名是否和该 key 的权限匹配。`,
       lastError?.status || 502,
     );
   }
