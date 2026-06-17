@@ -161,6 +161,27 @@ function normalizeOpenAICompatibleModelName(label, model) {
   return plainModel || rawModel;
 }
 
+function uniqueList(values) {
+  return [...new Set(values.map((value) => String(value || "").trim()).filter(Boolean))];
+}
+
+function getOpenAICompatibleModelCandidates(endpoint) {
+  const primaryModel = String(endpoint?.model || "").trim();
+  if (endpoint?.label !== "GemAI") {
+    return uniqueList([primaryModel]);
+  }
+  return uniqueList([
+    primaryModel,
+    "gemini-3.1-flash-lite",
+    "gemini-2.5-flash",
+  ]);
+}
+
+function shouldRetryGemAiModel(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return /no access to model|upstream error|model .*not|model.*unsupported|not support|unavailable|overloaded|temporar|无法识别的响应格式|无法解析的 json/.test(message);
+}
+
 function getReviewMode(localMetrics) {
   return String(localMetrics?.reviewMode || "essay").trim().toLowerCase() === "paragraph"
     ? "paragraph"
@@ -843,16 +864,9 @@ function shouldRetryWithFallback(error) {
   return /timeout|timed out|rate limit|quota|exceeded|too many|overloaded|busy|temporar|unavailable|fetch failed|invalid json|无法解析的 json|malformed json/.test(message);
 }
 
-async function requestFromOpenAICompatible(endpoint, promptPayload, userInput) {
-  if (!endpoint?.apiKey) {
-    throw createError(`缺少 ${endpoint?.label || "OpenAI 兼容"} 的 API Key。`, 503);
-  }
-  if (!endpoint?.baseUrl) {
-    throw createError(`缺少 ${endpoint?.label || "OpenAI 兼容"} 的 Base URL。`, 503);
-  }
-
+async function requestFromOpenAICompatibleModel(endpoint, model, promptPayload, userInput) {
   const requestBody = {
-    model: endpoint.model,
+    model,
     messages: [
       { role: "system", content: WRITING_REVIEW_INSTRUCTIONS },
       {
@@ -884,11 +898,36 @@ async function requestFromOpenAICompatible(endpoint, promptPayload, userInput) {
 
   return {
     provider_label: endpoint.label,
-    model: String(response?.model || endpoint.model || ""),
+    model: String(response?.model || model || ""),
     review: clampWritingReviewPayload(
       parseJsonTextResponse(extractChatCompletionText(response, endpoint.label), endpoint.label),
     ),
   };
+}
+
+async function requestFromOpenAICompatible(endpoint, promptPayload, userInput) {
+  if (!endpoint?.apiKey) {
+    throw createError(`缺少 ${endpoint?.label || "OpenAI 兼容"} 的 API Key。`, 503);
+  }
+  if (!endpoint?.baseUrl) {
+    throw createError(`缺少 ${endpoint?.label || "OpenAI 兼容"} 的 Base URL。`, 503);
+  }
+
+  const models = getOpenAICompatibleModelCandidates(endpoint);
+  let lastError = null;
+
+  for (const model of models) {
+    try {
+      return await requestFromOpenAICompatibleModel(endpoint, model, promptPayload, userInput);
+    } catch (error) {
+      lastError = error;
+      if (endpoint.label !== "GemAI" || !shouldRetryGemAiModel(error)) {
+        throw error;
+      }
+    }
+  }
+
+  throw lastError || createError(`${endpoint.label} 暂时没有可用模型。`, 502);
 }
 
 async function requestFromOpenRouter(config, promptPayload, userInput) {
