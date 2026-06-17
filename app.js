@@ -5489,7 +5489,7 @@ function updateAiStatusUI() {
 
   if (selectedBackend.available) {
     els.aiStatusChip.textContent = `${selectedBackend.label} 已连接`;
-    els.aiModelMeta.textContent = "AI 精批通道已就绪，模型名已隐藏";
+    els.aiModelMeta.textContent = "AI 精批通道已就绪";
     els.aiHeroStatus.textContent = selectedBackend.label;
     els.aiSideMeta.textContent = `电子阅卷老师已上线，当前走 ${selectedBackend.label}。它会继续负责句子升级、词汇替换和结构复盘这些脏活累活。`;
     return;
