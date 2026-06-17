@@ -298,26 +298,116 @@ export function getAiStatus(env) {
   };
 }
 
-function extractChatCompletionText(payload, providerLabel) {
-  const choice = Array.isArray(payload?.choices) ? payload.choices[0] : null;
-  const content = choice?.message?.content;
-
-  if (typeof content === "string" && content.trim()) {
+function extractTextFromContentParts(content) {
+  if (typeof content === "string") {
     return content.trim();
   }
+  if (!Array.isArray(content)) {
+    return "";
+  }
+  return content
+    .map((item) => {
+      if (!item || typeof item !== "object") {
+        return String(item || "");
+      }
+      if (typeof item.text === "string") {
+        return item.text;
+      }
+      if (typeof item.output_text === "string") {
+        return item.output_text;
+      }
+      if (typeof item.input_text === "string") {
+        return item.input_text;
+      }
+      if (typeof item.text?.value === "string") {
+        return item.text.value;
+      }
+      if (typeof item.function?.arguments === "string") {
+        return item.function.arguments;
+      }
+      return "";
+    })
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
 
-  if (Array.isArray(content)) {
-    const text = content
-      .map((item) => item?.text?.value || item?.text || "")
-      .filter(Boolean)
-      .join("\n")
-      .trim();
-    if (text) {
-      return text;
+function collectJsonLikeStrings(value, results = [], depth = 0) {
+  if (!value || depth > 6 || results.length >= 12) {
+    return results;
+  }
+  if (typeof value === "string") {
+    const text = value.trim();
+    if (text.includes("{") && text.includes("}") && /overall_band|band_breakdown|summary|strengths/i.test(text)) {
+      results.push(text);
     }
+    return results;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectJsonLikeStrings(item, results, depth + 1));
+    return results;
+  }
+  if (typeof value === "object") {
+    Object.values(value).forEach((item) => collectJsonLikeStrings(item, results, depth + 1));
+  }
+  return results;
+}
+
+function extractGeminiCandidateText(payload) {
+  const candidate = Array.isArray(payload?.candidates) ? payload.candidates[0] : null;
+  if (!candidate) {
+    return "";
+  }
+  return extractTextFromContentParts(candidate.content?.parts || candidate.parts || candidate.content);
+}
+
+function extractOpenAIOutputText(payload) {
+  if (typeof payload?.output_text === "string" && payload.output_text.trim()) {
+    return payload.output_text.trim();
+  }
+  if (!Array.isArray(payload?.output)) {
+    return "";
+  }
+  return payload.output
+    .map((item) => extractTextFromContentParts(item?.content || item?.text || item))
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
+
+function extractChatCompletionText(payload, providerLabel) {
+  const choice = Array.isArray(payload?.choices) ? payload.choices[0] : null;
+  const message = choice?.message || choice?.delta || {};
+  const knownCandidates = [
+    extractTextFromContentParts(message.content),
+    extractTextFromContentParts(choice?.text),
+    extractOpenAIOutputText(payload),
+    extractGeminiCandidateText(payload),
+    extractTextFromContentParts(payload?.message?.content),
+    extractTextFromContentParts(payload?.content),
+    extractTextFromContentParts(payload?.text),
+    extractTextFromContentParts(message.reasoning_content),
+    extractTextFromContentParts(message.reasoning),
+  ];
+  const nonEmptyCandidates = knownCandidates.filter(Boolean);
+  const jsonCandidate = nonEmptyCandidates.find((text) => text.includes("{") && text.includes("}"));
+
+  if (jsonCandidate) {
+    return jsonCandidate;
+  }
+  if (nonEmptyCandidates[0]) {
+    return nonEmptyCandidates[0];
   }
 
-  throw createError(`${providerLabel} 返回了无法识别的响应格式。`, 502);
+  const jsonLike = collectJsonLikeStrings(payload)[0];
+  if (jsonLike) {
+    return jsonLike;
+  }
+
+  const keys = payload && typeof payload === "object"
+    ? Object.keys(payload).slice(0, 8).join(", ")
+    : "";
+  throw createError(`${providerLabel} 返回了无法识别的响应格式${keys ? `（字段：${keys}）` : ""}。`, 502);
 }
 
 function parseJsonTextResponse(text, providerLabel) {
