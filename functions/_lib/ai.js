@@ -173,9 +173,19 @@ function parseModelList(value) {
 }
 
 function normalizeOpenAICompatibleModelList(label, values) {
-  return uniqueList(
+  const normalizedModels = uniqueList(
     values.map((model) => normalizeOpenAICompatibleModelName(label, model)),
   );
+  if (label !== "GemAI") {
+    return normalizedModels;
+  }
+
+  const preferredModels = normalizedModels.filter((model) => /claude-opus-4-6/i.test(model));
+  if (!preferredModels.length) {
+    return normalizedModels;
+  }
+  const fallbackModels = normalizedModels.filter((model) => !/claude-opus-4-[78]/i.test(model) && !/claude-opus-4-6/i.test(model));
+  return uniqueList([...preferredModels, ...fallbackModels]);
 }
 
 function getOpenAICompatibleModelCandidates(endpoint) {
