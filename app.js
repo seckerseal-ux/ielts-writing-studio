@@ -3800,6 +3800,25 @@ function handlePendingReviewAction(event) {
   resumePendingReview(jobId);
 }
 
+function getFriendlyAiErrorMessage(message, fallbackText = "AI 服务暂时无法处理。当前已保留本地快评结果。") {
+  const rawMessage = String(message || fallbackText);
+  const cleanMessage = rawMessage
+    .replace(/\s*\(request id:[^)]+\)/gi, "")
+    .replace(/\s*request id:\s*[a-z0-9_-]+/gi, "")
+    .trim();
+
+  if (/too many requests|max retries exceeded|please wait|rate limit|429|请求过多|限流|拥挤/i.test(rawMessage)) {
+    return "AI 精批通道现在比较拥挤，请等 1-3 分钟再试。刚才这次请求可能已经到达平台，不建议连续猛点，免得额度被反复消耗。";
+  }
+  if (/free-models-per-day|今日请求额度已经用完|解锁更多免费请求/i.test(rawMessage)) {
+    return "OpenRouter 免费模型今天的额度已经用完了，所以在线 AI 精批暂时不能继续使用。你可以先用本地快评，等额度重置后再试，或者给 OpenRouter 账户充值。";
+  }
+  if (/no access to model|no available channel|model .*not|model.*unsupported|not support|模型通道不可用/i.test(rawMessage)) {
+    return "当前模型通道不可用，请在后台换一个这个 key 有权限的模型。";
+  }
+  return cleanMessage || fallbackText;
+}
+
 async function evaluateEssayAi() {
   const text = els.essayText.value.trim();
   if (!text) {
@@ -3904,10 +3923,10 @@ async function evaluateEssayAi() {
       }));
       return;
     }
-    const message = String(error.message || "AI 服务暂时无法处理这篇作文。当前已保留本地快评结果。");
-    const friendlyMessage = /free-models-per-day|今日请求额度已经用完|解锁更多免费请求/i.test(message)
-      ? "OpenRouter 免费模型今天的额度已经用完了，所以在线 AI 精批暂时不能继续使用。你可以先用本地快评，等额度重置后再试，或者给 OpenRouter 账户充值。"
-      : message;
+    const friendlyMessage = getFriendlyAiErrorMessage(
+      error.message,
+      "AI 服务暂时无法处理这篇作文。当前已保留本地快评结果。",
+    );
     els.essayResult.insertAdjacentHTML("beforeend", `
       <div class="feedback feedback--danger">
         <strong>AI 精批失败</strong>
@@ -4021,10 +4040,10 @@ async function evaluateParagraphAi() {
       }));
       return;
     }
-    const message = String(error.message || "AI 服务暂时无法处理这段文字。当前已保留本地快评结果。");
-    const friendlyMessage = /free-models-per-day|今日请求额度已经用完|解锁更多免费请求/i.test(message)
-      ? "OpenRouter 免费模型今天的额度已经用完了，所以在线 AI 段落精批暂时不能继续使用。你可以先用本地快评，等额度重置后再试。"
-      : message;
+    const friendlyMessage = getFriendlyAiErrorMessage(
+      error.message,
+      "AI 服务暂时无法处理这段文字。当前已保留本地快评结果。",
+    );
     els.paragraphResult.insertAdjacentHTML("beforeend", `
       <div class="feedback feedback--danger">
         <strong>AI 段落精批失败</strong>

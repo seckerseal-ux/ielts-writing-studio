@@ -202,7 +202,32 @@ function getOpenAICompatibleModelCandidates(endpoint) {
 
 function shouldRetryGemAiModel(error) {
   const message = String(error?.message || "").toLowerCase();
+  if (isProviderRateLimitedMessage(message)) {
+    return false;
+  }
   return /no access to model|upstream error|model .*not|model.*unsupported|not support|unavailable|overloaded|temporar|无法识别的响应格式|无法解析的 json/.test(message);
+}
+
+function stripProviderRequestIds(message) {
+  return String(message || "")
+    .replace(/\s*\(request id:[^)]+\)/gi, "")
+    .replace(/\s*request id:\s*[a-z0-9_-]+/gi, "")
+    .trim();
+}
+
+function isProviderRateLimitedMessage(message) {
+  return /too many requests|max retries exceeded|please wait|rate limit|rate-limit|429|限流|拥挤|请求过多/i.test(String(message || ""));
+}
+
+function formatProviderErrorMessage(label, message) {
+  const cleanMessage = stripProviderRequestIds(message) || "未知错误";
+  if (isProviderRateLimitedMessage(cleanMessage)) {
+    return `${label} 当前精批通道比较拥挤，请等 1-3 分钟再试。刚才这次请求已经到达平台，不建议连续猛点。`;
+  }
+  if (/no access to model|no available channel|model .*not|model.*unsupported|not support/i.test(cleanMessage)) {
+    return `${label} 当前模型通道不可用，请换一个这个 key 有权限的模型。`;
+  }
+  return `${label} 接口返回错误：${cleanMessage}`;
 }
 
 function getReviewMode(localMetrics) {
@@ -888,11 +913,11 @@ async function fetchJson(url, init, timeoutMs, label) {
 
   if (!response.ok) {
     const message = payload?.error?.message || payload?.message || payload?.error || rawText || "未知错误";
-    throw createError(`${label} 接口返回错误：${message}`, response.status || 502);
+    throw createError(formatProviderErrorMessage(label, message), isProviderRateLimitedMessage(message) ? 429 : response.status || 502);
   }
   if (payload?.error && !payload.choices && !payload.output && !payload.candidates) {
     const message = payload.error?.message || payload.message || payload.error || "未知错误";
-    throw createError(`${label} 接口返回错误：${message}`, 502);
+    throw createError(formatProviderErrorMessage(label, message), isProviderRateLimitedMessage(message) ? 429 : 502);
   }
 
   return payload;
