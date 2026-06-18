@@ -2962,9 +2962,30 @@ function getPromptWordTargetLabel(prompt, mode) {
 function getCriterionLabel(prompt) {
   const exam = getPromptExam(prompt);
   if (exam === "kaoyan") {
-    return prompt.task === "small" ? "Task Fulfilment" : "Content & Logic";
+    return prompt.task === "small" ? "任务完成" : "内容与立意";
   }
   return prompt.task === "task1" ? "Task Achievement" : "Task Response";
+}
+
+function getMetricLabel(prompt, metricKey) {
+  const exam = getPromptExam(prompt);
+  if (exam === "kaoyan") {
+    const isSmall = prompt.task === "small";
+    const labels = {
+      taskResponse: isSmall ? "任务完成" : "内容与立意",
+      coherence: isSmall ? "格式与结构" : "结构层次",
+      lexical: "语言表达",
+      grammar: "语法规范",
+    };
+    return labels[metricKey] || metricKey;
+  }
+  const labels = {
+    taskResponse: getCriterionLabel(prompt),
+    coherence: "Coherence & Cohesion",
+    lexical: "Lexical Resource",
+    grammar: "Grammar Range & Accuracy",
+  };
+  return labels[metricKey] || metricKey;
 }
 
 function getLevelOptionLabel(exam, value) {
@@ -2989,7 +3010,20 @@ function computeKaoyanScore(prompt, breakdown, overallBand = 0) {
       + Number(breakdown.grammar || 0) * weights.grammar
     )
     : Number(overallBand || 0);
-  return roundToHalf((normalized / 9) * getKaoyanScoreMax(task));
+  return roundKaoyanScore((normalized / 9) * getKaoyanScoreMax(task), getKaoyanScoreMax(task));
+}
+
+function roundKaoyanScore(value, max = Infinity) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return 0;
+  }
+  return Math.max(0, Math.min(max, Math.round(numeric)));
+}
+
+function formatKaoyanScore(value, max, compact = false) {
+  const rounded = roundKaoyanScore(value, max);
+  return compact ? `${rounded}/${max}` : `${rounded} / ${max}`;
 }
 
 function getScorePresentation(prompt, overallBand, breakdown) {
@@ -3002,8 +3036,8 @@ function getScorePresentation(prompt, overallBand, breakdown) {
       total,
       max,
       totalLabel: "参考卷面分",
-      totalText: `${total.toFixed(1)} / ${max}`,
-      compactText: `${total.toFixed(1)}/${max}`,
+      totalText: formatKaoyanScore(total, max),
+      compactText: formatKaoyanScore(total, max, true),
     };
   }
   return {
@@ -3021,11 +3055,12 @@ function getHistoryScorePresentation(entry) {
   if (typeof entry.scoreValue === "number" && Number.isFinite(entry.scoreValue)) {
     const mode = entry.scoreMode || (typeof entry.scoreMax === "number" ? "kaoyan" : "ielts");
     const max = Number.isFinite(entry.scoreMax) ? entry.scoreMax : mode === "kaoyan" ? getKaoyanScoreMax(promptMeta.task) : 9;
-    const totalText = entry.scoreText || (mode === "kaoyan" ? `${entry.scoreValue.toFixed(1)} / ${max}` : entry.scoreValue.toFixed(1));
-    const compactText = entry.scoreCompactText || (mode === "kaoyan" ? `${entry.scoreValue.toFixed(1)}/${max}` : entry.scoreValue.toFixed(1));
+    const scoreValue = mode === "kaoyan" ? roundKaoyanScore(entry.scoreValue, max) : entry.scoreValue;
+    const totalText = mode === "kaoyan" ? formatKaoyanScore(scoreValue, max) : entry.scoreText || scoreValue.toFixed(1);
+    const compactText = mode === "kaoyan" ? formatKaoyanScore(scoreValue, max, true) : entry.scoreCompactText || scoreValue.toFixed(1);
     return {
       mode,
-      total: entry.scoreValue,
+      total: scoreValue,
       max,
       totalLabel: entry.scoreLabel || (mode === "kaoyan" ? "参考卷面分" : "预估 Band"),
       totalText,
@@ -3135,9 +3170,9 @@ function describeKaoyanMetric(metric, score, prompt) {
 function getMetricSnapshot(prompt, metricKey, value) {
   const exam = getPromptExam(prompt);
   if (exam === "kaoyan") {
-    const displayValue = roundToHalf((Number(value || 0) / 9) * 5);
+    const displayValue = roundKaoyanScore((Number(value || 0) / 9) * 5, 5);
     return {
-      valueText: `${displayValue.toFixed(1)}/5`,
+      valueText: `${displayValue}/5`,
       helper: describeKaoyanMetric(metricKey, Number(value || 0), prompt),
       percentage: Math.min(100, (displayValue / 5) * 100),
     };
@@ -4060,12 +4095,11 @@ function renderLocalEvaluation(container, result, meta) {
   const exam = getPromptExam(promptMeta);
   const showBodyLogicReview = exam === "ielts" && promptMeta.task === "task2" && meta.modeLabel === "整篇快评";
   const scoreView = getScorePresentation(promptMeta, result.overallBand, result.breakdown);
-  const criterionLabel = getCriterionLabel(promptMeta);
   const metricCards = [
-    { key: "taskResponse", label: criterionLabel, value: result.breakdown.taskResponse },
-    { key: "coherence", label: "Coherence & Cohesion", value: result.breakdown.coherence },
-    { key: "lexical", label: "Lexical Resource", value: result.breakdown.lexical },
-    { key: "grammar", label: "Grammar Range & Accuracy", value: result.breakdown.grammar },
+    { key: "taskResponse", label: getMetricLabel(promptMeta, "taskResponse"), value: result.breakdown.taskResponse },
+    { key: "coherence", label: getMetricLabel(promptMeta, "coherence"), value: result.breakdown.coherence },
+    { key: "lexical", label: getMetricLabel(promptMeta, "lexical"), value: result.breakdown.lexical },
+    { key: "grammar", label: getMetricLabel(promptMeta, "grammar"), value: result.breakdown.grammar },
   ];
 
   const cards = metricCards.map((card) => {
@@ -4169,10 +4203,18 @@ function renderAiEvaluation(prompt, payload) {
     grammar: Number(review.band_breakdown?.grammatical_range_accuracy || 0),
   };
   const scoreView = getScorePresentation(prompt, Number(review.overall_band || 0), breakdown);
-  const criterionSnapshot = getMetricSnapshot(prompt, "taskResponse", breakdown.taskResponse);
-  const coherenceSnapshot = getMetricSnapshot(prompt, "coherence", breakdown.coherence);
-  const lexicalSnapshot = getMetricSnapshot(prompt, "lexical", breakdown.lexical);
-  const grammarSnapshot = getMetricSnapshot(prompt, "grammar", breakdown.grammar);
+  const metricCards = [
+    { key: "taskResponse", snapshot: getMetricSnapshot(prompt, "taskResponse", breakdown.taskResponse) },
+    { key: "coherence", snapshot: getMetricSnapshot(prompt, "coherence", breakdown.coherence) },
+    { key: "lexical", snapshot: getMetricSnapshot(prompt, "lexical", breakdown.lexical) },
+    { key: "grammar", snapshot: getMetricSnapshot(prompt, "grammar", breakdown.grammar) },
+  ];
+  const metricCardsMarkup = metricCards.map((card) => `
+    <article class="analysis-card">
+      <span>${escapeHtml(getMetricLabel(prompt, card.key))}</span>
+      <strong>${card.snapshot.valueText}</strong>
+    </article>
+  `).join("");
   return `
     <div class="analysis-shell">
       <div class="tag-row">
@@ -4187,22 +4229,7 @@ function renderAiEvaluation(prompt, payload) {
           <span>${scoreView.totalLabel}</span>
           <strong>${scoreView.totalText}</strong>
         </article>
-        <article class="analysis-card">
-          <span>${criterionLabel}</span>
-          <strong>${criterionSnapshot.valueText}</strong>
-        </article>
-        <article class="analysis-card">
-          <span>Coherence</span>
-          <strong>${coherenceSnapshot.valueText}</strong>
-        </article>
-        <article class="analysis-card">
-          <span>Lexical</span>
-          <strong>${lexicalSnapshot.valueText}</strong>
-        </article>
-        <article class="analysis-card">
-          <span>Grammar</span>
-          <strong>${grammarSnapshot.valueText}</strong>
-        </article>
+        ${metricCardsMarkup}
       </div>
       <div class="feedback-grid">
         <article class="feedback-card">
